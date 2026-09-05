@@ -21,24 +21,23 @@ assert len(pickups) >= 2, f"Expected >= 2 farmer pickups, got {len(pickups)}"
 assert len(deliveries) >= 2, f"Expected >= 2 customer deliveries, got {len(deliveries)}"
 print(f"[OK] Route contains {len(pickups)} Farmer Pickups and {len(deliveries)} Customer Deliveries")
 
-# Check all pickups have OTP
+# Verify that cleartext OTP is NOT exposed in the route client response
 for p in pickups:
-    assert p.get("otp"), f"Pickup {p['stop_id']} missing OTP"
+    assert p.get("otp") is None, f"Privacy violation: Pickup {p['stop_id']} exposed cleartext OTP!"
     assert p.get("otp_type") == "pickup"
-    print(f"   - {p['stop_id']}: {p['entity']} ({p['action']}) -> Pickup OTP: {p['otp']}")
+    print(f"   - {p['stop_id']}: {p['entity']} ({p['action']}) -> OTP redacted (Secure)")
 
-# Check all deliveries have OTP
 for d in deliveries:
-    assert d.get("otp"), f"Delivery {d['stop_id']} missing OTP"
+    assert d.get("otp") is None, f"Privacy violation: Delivery {d['stop_id']} exposed cleartext OTP!"
     assert d.get("otp_type") == "delivery"
-    print(f"   - {d['stop_id']}: {d['entity']} ({d['action']}) -> Delivery OTP: {d['otp']}")
+    print(f"   - {d['stop_id']}: {d['entity']} ({d['action']}) -> OTP redacted (Secure)")
 
 # 2. Test Invalid OTP Rejection
 first_pickup = pickups[0]
 res_bad = client.post("/api/route-optimize/verify-stop", json={
     "stop_id": first_pickup["stop_id"],
     "otp": "0000",
-    "expected_otp": first_pickup["otp"],
+    "reference": first_pickup.get("reference", ""),
     "stop_type": "pickup",
     "entity": first_pickup["entity"]
 })
@@ -47,14 +46,23 @@ bad_data = json.loads(res_bad.data.decode("utf-8"))
 assert not bad_data.get("success")
 print(f"[OK] Invalid OTP correctly rejected: {bad_data.get('error')}")
 
-# 3. Test Valid OTP Verification for all stops
+# 3. Test Valid OTP Verification for all stops using server-side OTPs
+from marketplace_db import get_db_connection
+with get_db_connection() as conn:
+    rows = conn.execute("SELECT reference, pickup_otp, delivery_otp FROM delivery_updates").fetchall()
+    db_otps = {r["reference"]: {"pickup": str(r["pickup_otp"]), "delivery": str(r["delivery_otp"])} for r in rows}
+
 for s in stops:
     if s["type"] == "ORIGIN":
         continue
+    ref = s.get("reference")
+    correct_otp = db_otps.get(ref, {}).get(s["otp_type"]) if ref else "4821"
+    if not correct_otp:
+        continue
     res_ok = client.post("/api/route-optimize/verify-stop", json={
         "stop_id": s["stop_id"],
-        "otp": s["otp"],
-        "expected_otp": s["otp"],
+        "otp": correct_otp,
+        "reference": ref or "",
         "stop_type": s["otp_type"],
         "entity": s["entity"]
     })

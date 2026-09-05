@@ -42,7 +42,6 @@ export default function LogisticsOptimizerModule({ user }) {
   const [routeStops, setRouteStops] = useState([]);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [currentOnboardKg, setCurrentOnboardKg] = useState(0);
-  const [showPhoneSimulator, setShowPhoneSimulator] = useState(true);
   const [otpModalStop, setOtpModalStop] = useState(null);
   const [routeOtpInput, setRouteOtpInput] = useState('');
   const [routeOtpError, setRouteOtpError] = useState('');
@@ -220,7 +219,6 @@ export default function LogisticsOptimizerModule({ user }) {
         body: JSON.stringify({
           stop_id: otpModalStop.stop_id,
           otp: routeOtpInput.trim(),
-          expected_otp: otpModalStop.otp,
           stop_type: otpModalStop.otp_type,
           entity: otpModalStop.entity,
           reference: otpModalStop.reference || ''
@@ -512,25 +510,6 @@ export default function LogisticsOptimizerModule({ user }) {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 className="btn-secondary"
-                onClick={() => setShowPhoneSimulator(!showPhoneSimulator)}
-                style={{
-                  padding: '8px 14px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  borderColor: showPhoneSimulator ? '#059669' : 'var(--color-border)',
-                  color: showPhoneSimulator ? '#059669' : 'var(--color-soil-dark)',
-                  background: showPhoneSimulator ? '#ECFDF5' : 'white'
-                }}
-              >
-                <Phone size={14} />
-                {showPhoneSimulator ? 'Hide Handsets' : '📱 Show Farmer & Buyer Handsets'}
-              </button>
-
-              <button
-                className="btn-secondary"
                 onClick={handleResetRoute}
                 style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
               >
@@ -707,118 +686,6 @@ export default function LogisticsOptimizerModule({ user }) {
               </div>
             )}
           </div>
-
-          {/* SIMULATED FARMER & BUYER HANDSET SCREENS PANEL (WHEN TOGGLED) */}
-          {showPhoneSimulator && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
-                border: '1.5px solid #BFDBFE',
-                borderRadius: 'var(--radius-lg)',
-                padding: '18px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <div>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase' }}>
-                    📱 Participant Handset Simulator (Confidential OTPs)
-                  </span>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-soil-dark)', fontWeight: 600, marginTop: '2px' }}>
-                    Each farmer and customer receives their own independent 4-digit code. In production, this is visible only on their phone screen.
-                  </div>
-                </div>
-                <span style={{ fontSize: '0.72rem', color: '#2563EB', fontWeight: 700, background: '#DBEAFE', padding: '3px 8px', borderRadius: '6px' }}>
-                  Click code to pre-fill active prompt
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
-                {routeStops
-                  .filter((s) => s.type !== 'ORIGIN')
-                  .map((stop) => {
-                    const isFarmer = stop.type === 'PICKUP';
-                    const isVerified = stop.is_verified;
-                    return (
-                      <div
-                        key={stop.stop_id}
-                        style={{
-                          background: 'white',
-                          borderRadius: '8px',
-                          border: `1.5px solid ${isVerified ? '#A7F3D0' : isFarmer ? '#BBF7D0' : '#BFDBFE'}`,
-                          padding: '12px 14px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px',
-                          position: 'relative'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span
-                            style={{
-                              fontSize: '0.68rem',
-                              fontWeight: 800,
-                              textTransform: 'uppercase',
-                              color: isFarmer ? '#047857' : '#1E40AF',
-                              background: isFarmer ? '#DCFCE7' : '#DBEAFE',
-                              padding: '2px 6px',
-                              borderRadius: '4px'
-                            }}
-                          >
-                            {isFarmer ? '🌾 Farmer Screen' : '🛒 Buyer Screen'}
-                          </span>
-                          {isVerified && (
-                            <span style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 700 }}>
-                              ✓ Verified
-                            </span>
-                          )}
-                        </div>
-
-                        <div style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--color-soil-dark)' }}>
-                          {stop.entity}
-                        </div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)' }}>
-                          📍 {stop.location}
-                        </div>
-
-                        <div
-                          style={{
-                            marginTop: '6px',
-                            padding: '8px 10px',
-                            background: isVerified ? '#F0FDF4' : isFarmer ? '#F0FDF4' : '#EFF6FF',
-                            borderRadius: '6px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => {
-                            if (otpModalStop) {
-                              setRouteOtpInput(stop.otp);
-                            }
-                          }}
-                          title="Click to copy or autofill"
-                        >
-                          <div>
-                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-                              {isFarmer ? 'Pickup OTP' : 'Delivery OTP'}
-                            </div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '2px', color: isFarmer ? '#047857' : '#1E40AF', fontFamily: 'monospace' }}>
-                              {stop.otp}
-                            </div>
-                          </div>
-                          <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                            {stop.phone}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
 
           {/* ROUTE METRICS & VEHICLE CAPACITY PROGRESS BAR */}
           {routeData && (
@@ -1168,24 +1035,6 @@ export default function LogisticsOptimizerModule({ user }) {
                       {routeOtpSuccess}
                     </div>
                   )}
-
-                  {/* Simulator Quick Helper Button */}
-                  <button
-                    type="button"
-                    onClick={() => setRouteOtpInput(otpModalStop.otp)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#2563EB',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      padding: 0
-                    }}
-                  >
-                    💡 Simulator Quick-Fill: Auto-insert {otpModalStop.entity}'s code ({otpModalStop.otp})
-                  </button>
 
                   <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
                     <button

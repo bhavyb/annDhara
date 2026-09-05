@@ -971,6 +971,13 @@ def api_route_optimize():
             vehicle_capacity_kg=vehicle_cap,
             cost_per_km=cost_km
         )
+
+        # Ensure OTPs are never exposed or sent to logistics dashboard
+        for s in (route_data.get("route_sequence") or []):
+            s.pop("otp", None)
+        for s in (route_data.get("route_stops") or []):
+            s.pop("otp", None)
+
         return jsonify({"success": True, "data": route_data})
     except Exception as e:
         logger.error(f"Error optimizing routes: {e}", exc_info=True)
