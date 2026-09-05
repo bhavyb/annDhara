@@ -52,16 +52,6 @@ export default function LogisticsOptimizerModule({ user }) {
   // Dynamic Route Selection State
   const [routeMode, setRouteMode] = useState('live-db'); // 'live-db' or 'preset'
   const [selectedRouteOrderRefs, setSelectedRouteOrderRefs] = useState([]);
-  const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
-  const [newOrderForm, setNewOrderForm] = useState({
-    farmer_name: 'Kishan Patel',
-    pickup_location: 'Sanand, Ahmedabad',
-    crop: 'Tomato',
-    quantity_kg: 200,
-    buyer_name: 'Ahmedabad Retail Mart',
-    destination: 'Vastrapur, Ahmedabad'
-  });
-  const [creatingOrder, setCreatingOrder] = useState(false);
 
   // Dynamic Matching & Live Deliveries State
   const [liveDeliveries, setLiveDeliveries] = useState([]);
@@ -214,31 +204,6 @@ export default function LogisticsOptimizerModule({ user }) {
       fetchRouteOptimization(next.length > 0 ? next : null, 'live');
       return next;
     });
-  };
-
-  const handleCreateLiveOrder = async (e) => {
-    e.preventDefault();
-    setCreatingOrder(true);
-    try {
-      const res = await fetch('/api/deliveries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOrderForm)
-      });
-      const data = await res.json();
-      if (data.success && data.delivery) {
-        setShowCreateOrderModal(false);
-        const newRef = data.delivery.reference;
-        const updatedRefs = [...selectedRouteOrderRefs, newRef];
-        setSelectedRouteOrderRefs(updatedRefs);
-        fetchLiveDeliveries();
-        fetchRouteOptimization(updatedRefs);
-      }
-    } catch (err) {
-      console.error('Error creating live order:', err);
-    } finally {
-      setCreatingOrder(false);
-    }
   };
 
   const handleVerifyStopOtp = async (e) => {
@@ -642,14 +607,6 @@ export default function LogisticsOptimizerModule({ user }) {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowCreateOrderModal(true)}
-                  style={{ fontSize: '0.78rem', padding: '6px 14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <PlusCircle size={14} color="#059669" /> + Add New Live Order
-                </button>
                 {routeMode === 'live-db' && (
                   <button
                     type="button"
@@ -744,7 +701,7 @@ export default function LogisticsOptimizerModule({ user }) {
                   </div>
                 ) : (
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', padding: '6px 0' }}>
-                    No active live orders in queue. Click "+ Add New Live Order" to add real farmer orders.
+                    No active live orders in queue.
                   </div>
                 )}
               </div>
@@ -1252,137 +1209,6 @@ export default function LogisticsOptimizerModule({ user }) {
                       }}
                     >
                       {verifyingStopOtp ? 'Validating Code...' : 'Verify Stop & Update Vehicle'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* CREATE LIVE ORDER MODAL */}
-          {showCreateOrderModal && (
-            <div className="modal-overlay" onClick={() => setShowCreateOrderModal(false)}>
-              <div
-                className="modal-card"
-                onClick={(e) => e.stopPropagation()}
-                style={{ maxWidth: '480px', padding: '24px' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ background: '#ECFDF5', color: '#059669', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                      <PlusCircle size={20} />
-                    </div>
-                    <div>
-                      <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-soil-dark)', margin: 0 }}>
-                        Create Real Delivery Order
-                      </h4>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                        Creates live database order with auto-generated secure OTPs
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowCreateOrderModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                    <XCircle size={20} color="var(--color-text-muted)" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleCreateLiveOrder} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700 }}>Farmer Name *</label>
-                      <input
-                        type="text"
-                        className="nexus-input"
-                        required
-                        placeholder="e.g. Ramesh Patel"
-                        value={newOrderForm.farmer_name}
-                        onChange={(e) => setNewOrderForm({ ...newOrderForm, farmer_name: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700 }}>Pickup Location *</label>
-                      <input
-                        type="text"
-                        className="nexus-input"
-                        required
-                        placeholder="e.g. Sanand, Ahmedabad"
-                        value={newOrderForm.pickup_location}
-                        onChange={(e) => setNewOrderForm({ ...newOrderForm, pickup_location: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700 }}>Crop / Commodity *</label>
-                      <select
-                        className="nexus-select"
-                        value={newOrderForm.crop}
-                        onChange={(e) => setNewOrderForm({ ...newOrderForm, crop: e.target.value })}
-                      >
-                        <option value="Tomato">Tomato (Perishable)</option>
-                        <option value="Potato">Potato</option>
-                        <option value="Onion">Onion</option>
-                        <option value="Wheat">Wheat</option>
-                        <option value="Banana">Banana (Perishable)</option>
-                        <option value="Cotton">Cotton</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700 }}>Quantity (kg) *</label>
-                      <input
-                        type="number"
-                        min="10"
-                        max="1000"
-                        className="nexus-input"
-                        required
-                        value={newOrderForm.quantity_kg}
-                        onChange={(e) => setNewOrderForm({ ...newOrderForm, quantity_kg: Number(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700 }}>Buyer / Customer Name *</label>
-                      <input
-                        type="text"
-                        className="nexus-input"
-                        required
-                        placeholder="e.g. Ahmedabad Retail Mart"
-                        value={newOrderForm.buyer_name}
-                        onChange={(e) => setNewOrderForm({ ...newOrderForm, buyer_name: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700 }}>Delivery Destination *</label>
-                      <input
-                        type="text"
-                        className="nexus-input"
-                        required
-                        placeholder="e.g. Vastrapur, Ahmedabad"
-                        value={newOrderForm.destination}
-                        onChange={(e) => setNewOrderForm({ ...newOrderForm, destination: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={() => setShowCreateOrderModal(false)}
-                      style={{ flex: 1, padding: '10px 0', fontWeight: 700 }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn-primary"
-                      disabled={creatingOrder}
-                      style={{ flex: 2, padding: '10px 0', fontWeight: 800 }}
-                    >
-                      {creatingOrder ? 'Creating & Generating OTPs...' : 'Create Live Order & Add to Route'}
                     </button>
                   </div>
                 </form>
