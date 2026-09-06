@@ -1,36 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>annDhana | Fair Price Intelligence for Indian Farmers</title>
-    <meta name="description" content="AI-powered market intelligence closing the intermediary price gap for Indian farmers with real-time Agmarknet data, Prophet forecasts, mandi comparisons, and direct marketplace." />
-    <!-- Modern Agricultural Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E7D32'><path d='M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8z'/></svg>" />
-    <script type="module" crossorigin src="/assets/index-BtGZ3vGp.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BD3KHnDr.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <div id="google_translate_element" style="display:none; visibility:hidden; position:absolute; left:-9999px;"></div>
-    <script type="text/javascript">
-      function googleTranslateElementInit() {
-        try {
-          if (window.google && window.google.translate) {
-            new window.google.translate.TranslateElement({
-              pageLanguage: 'en',
-              includedLanguages: 'en,hi,gu,mr,pa,bn,ta,te,kn,ml,or,as,ur,mai,bho,gom,doi,ne,sd,sa',
-              autoDisplay: false
-            }, 'google_translate_element');
-          }
-        } catch (e) {
-          console.warn('Translate init:', e);
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>annDhana | Fair Price Intelligence for Indian Farmers</title>
+  <meta name="description"
+    content="AI-powered market intelligence closing the intermediary price gap for Indian farmers with real-time Agmarknet data, Prophet forecasts, mandi comparisons, and direct marketplace." />
+  <!-- Modern Agricultural Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E7D32'><path d='M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8z'/></svg>" />
+  <style>
+    /* 1. Prevent body top shift */
+    body {
+      top: 0px !important;
+      position: static !important;
+    }
+
+    /* 2. Hide Google Translate top banner */
+    .goog-te-banner-frame,
+    iframe.goog-te-banner-frame,
+    .goog-te-banner,
+    iframe[class*="goog-te-banner-frame"],
+    iframe.skiptranslate,
+    body > .skiptranslate,
+    .VIpgJd-ZVi9od-ORHb-OEVmcd,
+    .VIpgJd-ZVi9od-l4eHX-hSRLGd,
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf-ti6hGc,
+    .VIpgJd-ZVi9od-vH1Gmf,
+    .VIpgJd-y66vke-tPfvd,
+    div[class*="VIpgJd"],
+    iframe[class*="VIpgJd"],
+    iframe[id^=":"][src*="translate"],
+    #google_translate_element {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      height: 0px !important;
+      width: 0px !important;
+      border: none !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      z-index: -99999 !important;
+    }
+
+    /* 3. Hide hover tooltip popup ('Original text' balloon) */
+    #goog-gt-tt,
+    #goog-gt-tt *,
+    #goog-gt-vt,
+    #goog-gt-vt *,
+    .goog-te-balloon-frame,
+    .goog-te-balloon-frame *,
+    .goog-tooltip,
+    .goog-tooltip *,
+    .goog-tooltip:hover {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      height: 0px !important;
+      width: 0px !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      z-index: -99999 !important;
+    }
+
+    /* 4. Remove text hover highlight box and shadows completely */
+    html body font,
+    html body font.goog-text-highlight,
+    html body font[style*="vertical-align"],
+    html body .goog-text-highlight,
+    html body [class*="goog-text-highlight"],
+    body font.goog-text-highlight,
+    body .goog-text-highlight,
+    font.goog-text-highlight,
+    .goog-text-highlight,
+    .goog-text-highlight:hover,
+    font[style*="vertical-align"]:hover {
+      background: transparent !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+      -webkit-box-shadow: none !important;
+      border: none !important;
+      outline: none !important;
+      position: static !important;
+      display: inline !important;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-D1deij2J.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-qIM0N6FV.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <div id="google_translate_element" style="display:none; visibility:hidden; position:absolute; left:-9999px;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      try {
+        if (window.google && window.google.translate) {
+          new window.google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'en,hi,gu,mr,pa,bn,ta,te,kn,ml,or,as,ur,mai,bho,gom,doi,ne,sd,sa',
+            autoDisplay: false
+          }, 'google_translate_element');
+        }
+      } catch (e) {
+        console.warn('Translate init:', e);
+      }
+    }
+
+    // Active suppression of Google Translate banner, tooltip & hover highlight
+    (function () {
+      function killGoogleUI() {
+        if (document.body && document.body.style && document.body.style.top && document.body.style.top !== '0px') {
+          document.body.style.top = '0px';
+        }
+        var tt = document.getElementById('goog-gt-tt');
+        if (tt) {
+          tt.style.setProperty('display', 'none', 'important');
+          tt.style.setProperty('visibility', 'hidden', 'important');
+          tt.style.setProperty('opacity', '0', 'important');
+          tt.style.setProperty('pointer-events', 'none', 'important');
+          tt.style.setProperty('top', '-9999px', 'important');
+          tt.style.setProperty('left', '-9999px', 'important');
+        }
+        var banners = document.querySelectorAll('.goog-te-banner-frame, iframe.goog-te-banner-frame, iframe.skiptranslate, body > .skiptranslate');
+        for (var i = 0; i < banners.length; i++) {
+          banners[i].style.setProperty('display', 'none', 'important');
+          banners[i].style.setProperty('visibility', 'hidden', 'important');
+          banners[i].style.setProperty('height', '0px', 'important');
+          banners[i].style.setProperty('pointer-events', 'none', 'important');
+        }
+        var highlights = document.querySelectorAll('.goog-text-highlight');
+        for (var h = 0; h < highlights.length; h++) {
+          highlights[h].classList.remove('goog-text-highlight');
+          highlights[h].style.setProperty('background', 'transparent', 'important');
+          highlights[h].style.setProperty('background-color', 'transparent', 'important');
+          highlights[h].style.setProperty('box-shadow', 'none', 'important');
         }
       }
-    </script>
-    <script type="text/javascript" async defer src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-  </body>
+
+      if (window.MutationObserver) {
+        var obs = new MutationObserver(killGoogleUI);
+        obs.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style', 'class']
+        });
+      }
+
+      window.addEventListener('mouseover', function (e) {
+        var el = e.target;
+        while (el && el !== document.body) {
+          if (el.classList && el.classList.contains('goog-text-highlight')) {
+            el.classList.remove('goog-text-highlight');
+            el.style.setProperty('background', 'transparent', 'important');
+            el.style.setProperty('background-color', 'transparent', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+          }
+          el = el.parentElement;
+        }
+        var tt = document.getElementById('goog-gt-tt');
+        if (tt && tt.style.display !== 'none') {
+          tt.style.setProperty('display', 'none', 'important');
+          tt.style.setProperty('visibility', 'hidden', 'important');
+        }
+      }, true);
+    })();
+  </script>
+  <script type="text/javascript" async defer
+    src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+
 </html>

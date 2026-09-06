@@ -2217,3 +2217,90 @@ h6 {
   margin-bottom: 20px;
   font-size: 0.85rem;
 }
+
+/* ==========================================================================
+   Google Translate Complete UI Suppression
+   Hides top banner frame, prevents body top shift, and kills hover tooltips
+   ========================================================================== */
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+/* Top Banner and Widgets */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame,
+.goog-te-banner,
+iframe[class*="goog-te-banner-frame"],
+iframe.skiptranslate,
+body > .skiptranslate,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.VIpgJd-ZVi9od-l4eHX-hSRLGd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf-ti6hGc,
+.VIpgJd-ZVi9od-vH1Gmf,
+.VIpgJd-y66vke-tPfvd,
+div[class*="VIpgJd"],
+iframe[class*="VIpgJd"],
+iframe[id^=":"][src*="translate"],
+.goog-logo-link,
+.goog-te-gadget,
+.goog-te-gadget-simple,
+#google_translate_element {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0px !important;
+  width: 0px !important;
+  border: none !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  z-index: -99999 !important;
+}
+
+/* Hover Tooltip Popup ('Original text' / feedback balloon) */
+#goog-gt-tt,
+#goog-gt-tt *,
+#goog-gt-vt,
+#goog-gt-vt *,
+.goog-te-balloon-frame,
+.goog-te-balloon-frame *,
+.goog-tooltip,
+.goog-tooltip *,
+.goog-tooltip:hover {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0px !important;
+  width: 0px !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  z-index: -99999 !important;
+}
+
+/* Remove Text Hover Highlight Box and Shadow Completely */
+html body font,
+html body font.goog-text-highlight,
+html body font[style*="vertical-align"],
+html body .goog-text-highlight,
+html body [class*="goog-text-highlight"],
+body font.goog-text-highlight,
+body .goog-text-highlight,
+font.goog-text-highlight,
+.goog-text-highlight,
+.goog-text-highlight:hover,
+font[style*="vertical-align"]:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  position: static !important;
+  display: inline !important;
+}
+

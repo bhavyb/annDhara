@@ -1760,7 +1760,7 @@ export function useLanguage() {
   if (!context) {
     return {
       currentLanguage: 'en',
-      setLanguage: () => {},
+      setLanguage: () => { },
       t: (key, fallback = '') => (translations.en && translations.en[key]) || fallback || key,
       languages: LANGUAGES
     };
