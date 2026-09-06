@@ -30,7 +30,10 @@ import {
   XCircle,
   KeyRound,
   Phone,
-  Check
+  Check,
+  Send,
+  Smartphone,
+  MessageSquare
 } from 'lucide-react';
 import DeliveryStatusPanel from './DeliveryStatusPanel.jsx';
 import RouteMap from './RouteMap.jsx';
@@ -334,10 +337,10 @@ export default function LogisticsOptimizerModule({ user }) {
           prevStops.map((s) =>
             s.stop_id === stop.stop_id
               ? {
-                  ...s,
-                  is_verified: true,
-                  verified_at: nowTime
-                }
+                ...s,
+                is_verified: true,
+                verified_at: nowTime
+              }
               : s
           )
         );
@@ -363,10 +366,10 @@ export default function LogisticsOptimizerModule({ user }) {
       prevStops.map((s) =>
         s.stop_id === stop.stop_id
           ? {
-              ...s,
-              is_verified: true,
-              verified_at: nowTime
-            }
+            ...s,
+            is_verified: true,
+            verified_at: nowTime
+          }
           : s
       )
     );
@@ -399,10 +402,10 @@ export default function LogisticsOptimizerModule({ user }) {
           prevStops.map((s) =>
             s.stop_id === otpModalStop.stop_id
               ? {
-                  ...s,
-                  is_verified: true,
-                  verified_at: nowTime
-                }
+                ...s,
+                is_verified: true,
+                verified_at: nowTime
+              }
               : s
           )
         );
@@ -863,7 +866,7 @@ export default function LogisticsOptimizerModule({ user }) {
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            onChange={() => {}}
+                            onChange={() => { }}
                             style={{ accentColor: '#059669', cursor: 'pointer', width: '18px', height: '18px', marginTop: '2px' }}
                           />
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -964,7 +967,7 @@ export default function LogisticsOptimizerModule({ user }) {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {}}
+                          onChange={() => { }}
                           style={{ accentColor: '#7C3AED', cursor: 'pointer', width: '18px', height: '18px', marginTop: '2px' }}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1214,8 +1217,8 @@ export default function LogisticsOptimizerModule({ user }) {
                         border: isVerified
                           ? '1.5px solid #10B981'
                           : isCurrentActive
-                          ? '2px solid #2563EB'
-                          : `1px solid var(--color-border)`,
+                            ? '2px solid #2563EB'
+                            : `1px solid var(--color-border)`,
                         background: isVerified ? '#F0FDF4' : isCurrentActive ? '#FAFCFF' : 'white',
                         boxShadow: isCurrentActive
                           ? '0 0 0 3px rgba(37, 99, 235, 0.12), 0 4px 16px rgba(0,0,0,0.06)'
@@ -1260,12 +1263,12 @@ export default function LogisticsOptimizerModule({ user }) {
                               background: isVerified
                                 ? '#059669'
                                 : isCurrentActive
-                                ? '#2563EB'
-                                : isPickup
-                                ? '#0284C7'
-                                : isDelivery
-                                ? '#7C3AED'
-                                : '#6B7280',
+                                  ? '#2563EB'
+                                  : isPickup
+                                    ? '#0284C7'
+                                    : isDelivery
+                                      ? '#7C3AED'
+                                      : '#6B7280',
                               color: 'white',
                               display: 'flex',
                               alignItems: 'center',
@@ -1487,8 +1490,8 @@ export default function LogisticsOptimizerModule({ user }) {
                               {inlineVerifying[stop.stop_id]
                                 ? 'Validating PIN...'
                                 : isPickup
-                                ? 'Verify & Load Produce'
-                                : 'Verify & Handover to Buyer'}
+                                  ? 'Verify & Load Produce'
+                                  : 'Verify & Handover to Buyer'}
                             </button>
 
                             {stop.phone && (

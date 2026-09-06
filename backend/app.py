@@ -41,6 +41,7 @@ Endpoints:
 import json
 import logging
 import os
+from datetime import datetime
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -1147,6 +1148,75 @@ def api_route_optimize():
     except Exception as e:
         logger.error(f"Error optimizing routes: {e}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/route-optimize/request-otp", methods=["POST"])
+def api_route_optimize_request_otp():
+    """
+    POST /api/route-optimize/request-otp
+    Simulates sending an SMS dispatch / OTP notification to the farmer (at pickup) or customer (at delivery).
+    Returns the SMS notification text and the OTP so the recipient can view it and share it with the driver.
+    """
+    payload = request.get_json(force=True, silent=True) or {}
+    stop_id = payload.get("stop_id", "").strip()
+    stop_type = payload.get("stop_type", "pickup").strip().lower()
+    entity_name = payload.get("entity", "Partner").strip()
+    reference = payload.get("reference", "").strip()
+    phone = payload.get("phone", "").strip()
+
+    otp_val = ""
+    # 1. If live database order reference exists, read from SQLite delivery_updates
+    if reference:
+        with get_db_connection() as conn:
+            row = conn.execute(
+                "SELECT pickup_otp, delivery_otp FROM delivery_updates WHERE reference = ?",
+                (reference,)
+            ).fetchone()
+            if row:
+                otp_val = str(row["pickup_otp"] if stop_type == "pickup" else row["delivery_otp"]).strip()
+
+    # 2. If no OTP from DB or preset stop, check optimize_shared_logistics_route
+    if not otp_val:
+        route_data = optimize_shared_logistics_route()
+        for s in (route_data.get("route_sequence") or route_data.get("route_stops") or []):
+            if str(s.get("stop_id", "")).strip().upper() == stop_id.strip().upper():
+                otp_val = str(s.get("otp", "")).strip()
+                if not phone and s.get("phone"):
+                    phone = s.get("phone")
+                break
+
+    if not phone:
+        phone = "+91 98251 34812" if stop_type == "pickup" else "+91 98254 44509"
+
+    if not otp_val:
+        otp_val = "8917" if stop_type == "pickup" else "2223"
+
+    now_time = datetime.now().strftime("%I:%M %p")
+
+    if stop_type == "pickup":
+        sms_text = (
+            f"AnnDhara Alert: Carrier GJ-01-ET-8412 (Driver Ramesh Verma) has arrived at your farmgate. "
+            f"Your secret Handover PIN is [{otp_val}]. Share this code with the driver ONLY upon loading produce."
+        )
+    else:
+        sms_text = (
+            f"AnnDhara Delivery: Carrier GJ-01-ET-8412 (Driver Ramesh Verma) is at your doorstep with fresh produce. "
+            f"Your secret Delivery PIN is [{otp_val}]. Share this code with the driver ONLY after inspecting produce."
+        )
+
+    logger.info(f"SMS OTP dispatched to {entity_name} ({phone}): {sms_text}")
+
+    return jsonify({
+        "success": True,
+        "stop_id": stop_id,
+        "stop_type": stop_type,
+        "entity": entity_name,
+        "phone": phone,
+        "otp": otp_val,
+        "sms_text": sms_text,
+        "dispatched_at": now_time,
+        "message": f"✓ Security PIN requested! SMS notification sent to {entity_name} ({phone})."
+    })
 
 
 @app.route("/api/route-optimize/verify-stop", methods=["POST"])
