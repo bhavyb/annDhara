@@ -13,8 +13,9 @@ Core AI capabilities for the Demand-to-Delivery Agricultural Network:
 
 import math
 import logging
+import requests
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger("NexusAIEngine")
 
@@ -556,6 +557,58 @@ def match_harvest_to_buyers(
 # 5. CAPACITATED VEHICLE ROUTE OPTIMIZATION (CVRP HEURISTIC)
 # =============================================================================
 
+def get_route_geometry(coords: List[Tuple[float, float]]) -> List[List[float]]:
+    """
+    Returns driving road coordinates [lat, lng] for an ordered list of waypoints.
+    Queries OSRM routing service for true street geometry with fast fallback to direct segments.
+    """
+    if not coords:
+        return []
+    if len(coords) < 2:
+        return [[c[0], c[1]] for c in coords]
+
+    try:
+        coord_str = ";".join(f"{lng:.6f},{lat:.6f}" for lat, lng in coords)
+        url = f"https://router.project-osrm.org/route/v1/driving/{coord_str}?overview=full&geometries=geojson"
+        r = requests.get(url, timeout=2.5)
+        if r.status_code == 200:
+            data = r.json()
+            routes = data.get("routes")
+            if routes and "geometry" in routes[0]:
+                raw_pts = routes[0]["geometry"]["coordinates"]
+                # OSRM returns [lng, lat], convert to [lat, lng] for Leaflet
+                return [[pt[1], pt[0]] for pt in raw_pts]
+    except Exception as exc:
+        logger.warning(f"OSRM route geometry fetch skipped: {exc}")
+
+    # Interpolated fallback between points
+    fallback_pts = []
+    for i in range(len(coords) - 1):
+        p1 = coords[i]
+        p2 = coords[i + 1]
+        fallback_pts.append([p1[0], p1[1]])
+        for step in (0.25, 0.5, 0.75):
+            inter_lat = p1[0] + (p2[0] - p1[0]) * step
+            inter_lng = p1[1] + (p2[1] - p1[1]) * step
+            fallback_pts.append([round(inter_lat, 6), round(inter_lng, 6)])
+    fallback_pts.append([coords[-1][0], coords[-1][1]])
+    return fallback_pts
+
+
+def get_google_maps_nav_url(coords: List[Tuple[float, float]]) -> str:
+    """Generates direct Google Maps turn-by-turn navigation URL for drivers."""
+    if not coords:
+        return "https://www.google.com/maps"
+    if len(coords) == 1:
+        return f"https://www.google.com/maps/search/?api=1&query={coords[0][0]},{coords[0][1]}"
+    origin = f"{coords[0][0]},{coords[0][1]}"
+    dest = f"{coords[-1][0]},{coords[-1][1]}"
+    if len(coords) > 2:
+        waypoints = "|".join(f"{c[0]},{c[1]}" for c in coords[1:-1])
+        return f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={dest}&waypoints={waypoints}&travelmode=driving"
+    return f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={dest}&travelmode=driving"
+
+
 def optimize_shared_logistics_route(
     pickups: Optional[List[Dict[str, Any]]] = None,
     deliveries: Optional[List[Dict[str, Any]]] = None,
@@ -770,6 +823,9 @@ def optimize_shared_logistics_route(
         "stop_id": "STOP-1",
         "step": 1,
         "type": "ORIGIN",
+        "lat": depot["lat"],
+        "lng": depot["lng"],
+        "coordinates": [depot["lat"], depot["lng"]],
         "otp_type": "none",
         "otp": "",
         "otp_verified": True,
@@ -804,6 +860,9 @@ def optimize_shared_logistics_route(
             "stop_id": f"STOP-{step_num}",
             "step": step_num,
             "type": "PICKUP",
+            "lat": p["lat"],
+            "lng": p["lng"],
+            "coordinates": [p["lat"], p["lng"]],
             "otp_type": "pickup",
             "otp": p_otp,
             "reference": p.get("reference", ""),
@@ -845,6 +904,9 @@ def optimize_shared_logistics_route(
             "stop_id": f"STOP-{step_num}",
             "step": step_num,
             "type": "DELIVERY",
+            "lat": d["lat"],
+            "lng": d["lng"],
+            "coordinates": [d["lat"], d["lng"]],
             "otp_type": "delivery",
             "otp": d_otp,
             "reference": d.get("reference", ""),
@@ -927,7 +989,10 @@ def optimize_shared_logistics_route(
         },
         "uncoordinated_trips": uncoordinated_trips,
         "route_stops": route_sequence,
-        "route_sequence": route_sequence
+        "route_sequence": route_sequence,
+        "path_coordinates": get_route_geometry([(s["lat"], s["lng"]) for s in route_sequence if "lat" in s and "lng" in s]),
+        "navigation_url": get_google_maps_nav_url([(s["lat"], s["lng"]) for s in route_sequence if "lat" in s and "lng" in s]),
+        "total_stops": len(route_sequence)
     }
 
 

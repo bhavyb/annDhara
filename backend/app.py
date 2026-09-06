@@ -45,6 +45,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
+from typing import Any, Dict, List, Optional
 
 from data_fetcher import (
     get_cache_status,
@@ -203,6 +204,106 @@ def api_get_delivery(reference: str):
     return jsonify({"success": True, "delivery": delivery})
 
 
+def build_single_delivery_route(delivery: Dict[str, Any]) -> Dict[str, Any]:
+    """Generates precision map coordinates, road geometry, and stop sequence for a single delivery."""
+    from mandi_comparator import resolve_coordinates
+    from ai_engine import get_route_geometry, get_google_maps_nav_url, haversine_distance_km
+
+    p_loc = delivery.get("pickup_location") or "Sanand, Ahmedabad"
+    d_loc = delivery.get("destination") or "Satellite, Ahmedabad"
+
+    p_lat, p_lng, p_label = resolve_coordinates(None, None, p_loc)
+    d_lat, d_lng, d_label = resolve_coordinates(None, None, d_loc)
+
+    # Depot / driver initial position
+    depot_lat = round(p_lat - 0.015, 4)
+    depot_lng = round(p_lng + 0.012, 4)
+    depot_loc = f"{delivery.get('logistics_name') or 'Logistics'} Dispatch Center"
+
+    stops = [
+        {
+            "step": 1,
+            "stop_id": "STOP-1",
+            "type": "ORIGIN",
+            "title": f"Dispatch Hub ({delivery.get('logistics_name') or 'Carrier Base'})",
+            "location": depot_loc,
+            "lat": depot_lat,
+            "lng": depot_lng,
+            "coordinates": [depot_lat, depot_lng],
+            "action": f"Vehicle Departure: {delivery.get('vehicle_number') or 'Fleet Vehicle'} dispatched",
+            "status": "Departed",
+            "phone": "+91 98251 44102",
+            "role": "Logistics Partner",
+            "stakeholder_label": f"Carrier: {delivery.get('logistics_name') or 'Assigned Partner'}"
+        },
+        {
+            "step": 2,
+            "stop_id": "STOP-2",
+            "type": "PICKUP",
+            "title": f"Farmgate Pickup: {delivery.get('farmer_name') or 'Farmer'}",
+            "location": p_loc,
+            "lat": p_lat,
+            "lng": p_lng,
+            "coordinates": [p_lat, p_lng],
+            "action": f"Pick up {delivery.get('quantity_kg', 0)} kg {delivery.get('crop', 'Produce')}",
+            "crop": delivery.get("crop"),
+            "qty_kg": delivery.get("quantity_kg"),
+            "status": "Picked Up" if delivery.get("status") in ("In Transit", "Out for Delivery", "Delivered") else "Pending Pickup",
+            "phone": delivery.get("farmer_phone") or "+91 98251 11201",
+            "role": "Farmer / FPO",
+            "stakeholder_label": f"Farmer: {delivery.get('farmer_name') or 'Farmer'}",
+            "otp_type": "pickup",
+            "otp_verified": delivery.get("status") in ("In Transit", "Out for Delivery", "Delivered"),
+            "reference": delivery.get("reference")
+        },
+        {
+            "step": 3,
+            "stop_id": "STOP-3",
+            "type": "DELIVERY",
+            "title": f"Customer Dropoff: {delivery.get('buyer_name') or 'Buyer'}",
+            "location": d_loc,
+            "lat": d_lat,
+            "lng": d_lng,
+            "coordinates": [d_lat, d_lng],
+            "action": f"Deliver {delivery.get('quantity_kg', 0)} kg {delivery.get('crop', 'Produce')} to {delivery.get('buyer_name') or 'Customer'}",
+            "crop": delivery.get("crop"),
+            "qty_kg": delivery.get("quantity_kg"),
+            "status": "Delivered" if delivery.get("status") == "Delivered" else "Pending Delivery",
+            "phone": delivery.get("buyer_phone") or "+91 98254 44509",
+            "role": "Buyer / Consumer",
+            "stakeholder_label": f"Buyer: {delivery.get('buyer_name') or 'Customer'}",
+            "otp_type": "delivery",
+            "otp_verified": delivery.get("status") == "Delivered",
+            "reference": delivery.get("reference")
+        }
+    ]
+
+    coords = [(s["lat"], s["lng"]) for s in stops]
+    path_coords = get_route_geometry(coords)
+    nav_url = get_google_maps_nav_url(coords)
+
+    leg1 = round(haversine_distance_km(depot_lat, depot_lng, p_lat, p_lng) * 1.25, 1)
+    leg2 = round(haversine_distance_km(p_lat, p_lng, d_lat, d_lng) * 1.25, 1)
+    total_km = round(leg1 + leg2, 1)
+    eta_mins = max(12, int(round((total_km / 35.0) * 60)))
+
+    return {
+        "reference": delivery.get("reference"),
+        "total_distance_km": total_km,
+        "eta_minutes": eta_mins,
+        "eta_label": f"{eta_mins} mins (~{total_km} km)",
+        "path_coordinates": path_coords,
+        "navigation_url": nav_url,
+        "route_stops": stops,
+        "route_sequence": stops,
+        "carrier": {
+            "name": delivery.get("logistics_name") or "Carrier Assigned",
+            "vehicle_number": delivery.get("vehicle_number") or "Fleet Vehicle",
+            "status": delivery.get("status")
+        }
+    }
+
+
 @app.route("/api/deliveries/<reference>/accept", methods=["POST"])
 def api_accept_delivery(reference: str):
     """Allows a logistics partner to claim an unassigned delivery and set initial carrier details."""
@@ -221,9 +322,27 @@ def api_accept_delivery(reference: str):
         delivery["delivery_otp"] = ""
         delivery.pop("demo_pickup_otp", None)
         delivery.pop("demo_delivery_otp", None)
-        return jsonify({"success": True, "delivery": delivery})
+
+        # Generate AI route optimization right after logistics accepts
+        route_data = build_single_delivery_route(delivery)
+
+        return jsonify({
+            "success": True,
+            "delivery": delivery,
+            "optimized_route": route_data
+        })
     except (TypeError, ValueError) as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
+
+
+@app.route("/api/deliveries/<reference>/route", methods=["GET"])
+def api_delivery_route(reference: str):
+    """Fetches AI route optimization geometry, stops, and navigation URL for a delivery."""
+    delivery = get_delivery_by_reference(reference)
+    if not delivery:
+        return jsonify({"success": False, "error": "Delivery not found"}), 404
+    route_data = build_single_delivery_route(delivery)
+    return jsonify({"success": True, "data": route_data})
 
 
 @app.route("/api/deliveries/<reference>/status", methods=["PATCH", "POST"])

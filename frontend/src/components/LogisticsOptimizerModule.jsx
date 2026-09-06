@@ -33,6 +33,8 @@ import {
   Check
 } from 'lucide-react';
 import DeliveryStatusPanel from './DeliveryStatusPanel.jsx';
+import RouteMap from './RouteMap.jsx';
+import RouteMapModal from './RouteMapModal.jsx';
 
 const PRESET_FARMER_CARDS = [
   {
@@ -84,6 +86,9 @@ export default function LogisticsOptimizerModule({ user }) {
   const [dynamicCandidates, setDynamicCandidates] = useState([]);
   const [loadingDynamic, setLoadingDynamic] = useState(false);
   const [assignMessage, setAssignMessage] = useState('');
+
+  // Route Map Modal State
+  const [mapModalData, setMapModalData] = useState({ isOpen: false, routeData: null, delivery: null });
 
   // Group active orders by unique farmer for multi-farmer pickup routing
   const farmersWithOrders = React.useMemo(() => {
@@ -422,6 +427,13 @@ export default function LogisticsOptimizerModule({ user }) {
       if (data.success) {
         setAssignMessage(`✓ Successfully assigned ${vehicle.company} (${vehicle.vehicle_number}) to order ${targetOrder.reference}!`);
         fetchLiveDeliveries();
+        if (data.optimized_route) {
+          setMapModalData({
+            isOpen: true,
+            routeData: data.optimized_route,
+            delivery: data.delivery || targetOrder
+          });
+        }
       } else {
         setAssignMessage(data.error || 'Assignment failed');
       }
@@ -1007,6 +1019,18 @@ export default function LogisticsOptimizerModule({ user }) {
                 {routeStops.filter((s) => s.is_verified).length} of {routeStops.length} Milestones Verified
               </span>
             </div>
+
+            {/* Interactive Leaflet Route Map */}
+            {routeData && (
+              <div style={{ marginBottom: '14px' }}>
+                <RouteMap
+                  routeData={routeData}
+                  height="420px"
+                  title="Live Multi-Stop Shared Logistics GPS Route & Driving Path"
+                  showSummaryHeader={true}
+                />
+              </div>
+            )}
 
             {/* Stops Timeline List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1655,6 +1679,14 @@ export default function LogisticsOptimizerModule({ user }) {
           </div>
         </div>
       )}
+
+      {/* AI Route Optimization Map Modal */}
+      <RouteMapModal
+        isOpen={mapModalData.isOpen}
+        onClose={() => setMapModalData({ isOpen: false, routeData: null, delivery: null })}
+        routeData={mapModalData.routeData}
+        delivery={mapModalData.delivery}
+      />
     </div>
   );
 }

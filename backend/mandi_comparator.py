@@ -152,6 +152,101 @@ ALL_INDIAN_DISTRICTS = {
     "kolar": {"lat": 13.1367, "lng": 78.1291}
 }
 
+MICRO_LOCATIONS = {
+    # Ahmedabad & Surrounding Agricultural / Urban Hubs
+    "sanand farm gate": {"lat": 22.9840, "lng": 72.3780, "district": "Ahmedabad", "state": "Gujarat"},
+    "sanand": {"lat": 22.9840, "lng": 72.3780, "district": "Ahmedabad", "state": "Gujarat"},
+    "bavla agri belt": {"lat": 22.8360, "lng": 72.3610, "district": "Ahmedabad", "state": "Gujarat"},
+    "bavla": {"lat": 22.8360, "lng": 72.3610, "district": "Ahmedabad", "state": "Gujarat"},
+    "dholka rural": {"lat": 22.7210, "lng": 72.4410, "district": "Ahmedabad", "state": "Gujarat"},
+    "dholka": {"lat": 22.7210, "lng": 72.4410, "district": "Ahmedabad", "state": "Gujarat"},
+    "bhavya supermarket": {"lat": 23.0280, "lng": 72.5250, "district": "Ahmedabad", "state": "Gujarat"},
+    "satellite": {"lat": 23.0280, "lng": 72.5250, "district": "Ahmedabad", "state": "Gujarat"},
+    "sg highway": {"lat": 23.0380, "lng": 72.5120, "district": "Ahmedabad", "state": "Gujarat"},
+    "prahlad nagar": {"lat": 23.0120, "lng": 72.5080, "district": "Ahmedabad", "state": "Gujarat"},
+    "vastrapur": {"lat": 23.0350, "lng": 72.5280, "district": "Ahmedabad", "state": "Gujarat"},
+    "navrangpura": {"lat": 23.0360, "lng": 72.5610, "district": "Ahmedabad", "state": "Gujarat"},
+    "maninagar": {"lat": 22.9980, "lng": 72.6020, "district": "Ahmedabad", "state": "Gujarat"},
+    "naroda": {"lat": 23.0680, "lng": 72.6580, "district": "Ahmedabad", "state": "Gujarat"},
+    "bopal": {"lat": 23.0340, "lng": 72.4640, "district": "Ahmedabad", "state": "Gujarat"},
+    "south bopal": {"lat": 23.0210, "lng": 72.4610, "district": "Ahmedabad", "state": "Gujarat"},
+    "gota": {"lat": 23.0980, "lng": 72.5350, "district": "Ahmedabad", "state": "Gujarat"},
+    "chandkheda": {"lat": 23.1120, "lng": 72.5930, "district": "Ahmedabad", "state": "Gujarat"},
+    "motera": {"lat": 23.0990, "lng": 72.5970, "district": "Ahmedabad", "state": "Gujarat"},
+    "aslali": {"lat": 22.9150, "lng": 72.5950, "district": "Ahmedabad", "state": "Gujarat"},
+    "bareja": {"lat": 22.8850, "lng": 72.5850, "district": "Ahmedabad", "state": "Gujarat"},
+    "viramgam": {"lat": 23.1250, "lng": 72.0320, "district": "Ahmedabad", "state": "Gujarat"},
+
+    # Gandhinagar
+    "sector 21": {"lat": 23.2350, "lng": 72.6480, "district": "Gandhinagar", "state": "Gujarat"},
+    "gandhinagar": {"lat": 23.2156, "lng": 72.6369, "district": "Gandhinagar", "state": "Gujarat"},
+    "infocity": {"lat": 23.1950, "lng": 72.6280, "district": "Gandhinagar", "state": "Gujarat"},
+    "kalol": {"lat": 23.2380, "lng": 72.4980, "district": "Gandhinagar", "state": "Gujarat"},
+    "mansa": {"lat": 23.4250, "lng": 72.6610, "district": "Gandhinagar", "state": "Gujarat"},
+
+    # Vadodara
+    "alkapuri": {"lat": 22.3120, "lng": 73.1720, "district": "Vadodara", "state": "Gujarat"},
+    "vadodara": {"lat": 22.3072, "lng": 73.1812, "district": "Vadodara", "state": "Gujarat"},
+    "sayajigunj": {"lat": 22.3110, "lng": 73.1880, "district": "Vadodara", "state": "Gujarat"},
+    "manjalpur": {"lat": 22.2680, "lng": 73.1920, "district": "Vadodara", "state": "Gujarat"},
+    "padra": {"lat": 22.2400, "lng": 73.0800, "district": "Vadodara", "state": "Gujarat"},
+    "karjan": {"lat": 22.0490, "lng": 73.1210, "district": "Vadodara", "state": "Gujarat"},
+
+    # Surat
+    "surat": {"lat": 21.1702, "lng": 72.8311, "district": "Surat", "state": "Gujarat"},
+    "adajan": {"lat": 21.1960, "lng": 72.7950, "district": "Surat", "state": "Gujarat"},
+    "varachha": {"lat": 21.2150, "lng": 72.8620, "district": "Surat", "state": "Gujarat"},
+    "kamrej": {"lat": 21.2720, "lng": 72.9640, "district": "Surat", "state": "Gujarat"},
+
+    # Rajkot & Saurashtra
+    "rajkot hub": {"lat": 22.3039, "lng": 70.8022, "district": "Rajkot", "state": "Gujarat"},
+    "rajkot": {"lat": 22.3039, "lng": 70.8022, "district": "Rajkot", "state": "Gujarat"},
+    "gondal apmc": {"lat": 21.9619, "lng": 70.7933, "district": "Rajkot", "state": "Gujarat"},
+    "gondal": {"lat": 21.9619, "lng": 70.7933, "district": "Rajkot", "state": "Gujarat"},
+    "junagadh": {"lat": 21.5222, "lng": 70.4579, "district": "Junagadh", "state": "Gujarat"},
+    "amreli": {"lat": 21.6032, "lng": 71.2221, "district": "Amreli", "state": "Gujarat"},
+    "morbi": {"lat": 22.8120, "lng": 70.8378, "district": "Morbi", "state": "Gujarat"},
+    "jamnagar": {"lat": 22.4707, "lng": 70.0577, "district": "Jamnagar", "state": "Gujarat"},
+    "bhavnagar": {"lat": 21.7645, "lng": 72.1519, "district": "Bhavnagar", "state": "Gujarat"},
+
+    # South India (Hyderabad, Bengaluru, Kerala, TN)
+    "falaknuma": {"lat": 17.3320, "lng": 78.4720, "district": "Hyderabad", "state": "Telangana"},
+    "rythu bazar": {"lat": 17.3320, "lng": 78.4720, "district": "Hyderabad", "state": "Telangana"},
+    "hyderabad": {"lat": 17.3850, "lng": 78.4867, "district": "Hyderabad", "state": "Telangana"},
+    "secunderabad": {"lat": 17.4399, "lng": 78.4983, "district": "Hyderabad", "state": "Telangana"},
+    "mukkom": {"lat": 11.3210, "lng": 75.9980, "district": "Kozhikode", "state": "Kerala"},
+    "kozhikode": {"lat": 11.2588, "lng": 75.7804, "district": "Kozhikode", "state": "Kerala"},
+    "calicut": {"lat": 11.2588, "lng": 75.7804, "district": "Kozhikode", "state": "Kerala"},
+    "bengaluru": {"lat": 12.9716, "lng": 77.5946, "district": "Bengaluru Urban", "state": "Karnataka"},
+    "kolar": {"lat": 13.1367, "lng": 78.1291, "district": "Kolar", "state": "Karnataka"},
+    "koyambedu": {"lat": 13.0694, "lng": 80.1948, "district": "Chennai", "state": "Tamil Nadu"},
+    "chennai": {"lat": 13.0827, "lng": 80.2707, "district": "Chennai", "state": "Tamil Nadu"},
+
+    # North / Central / East
+    "baripada": {"lat": 21.9346, "lng": 86.7328, "district": "Mayurbhanj", "state": "Odisha"},
+    "mayurbhanj": {"lat": 21.9346, "lng": 86.7328, "district": "Mayurbhanj", "state": "Odisha"},
+    "mayurbhanja": {"lat": 21.9346, "lng": 86.7328, "district": "Mayurbhanj", "state": "Odisha"},
+    "bhubaneswar": {"lat": 20.2961, "lng": 85.8245, "district": "Khordha", "state": "Odisha"},
+    "azadpur": {"lat": 28.7150, "lng": 77.1720, "district": "North Delhi", "state": "Delhi"},
+    "delhi": {"lat": 28.7041, "lng": 77.1025, "district": "Delhi", "state": "Delhi"},
+    "noida": {"lat": 28.5355, "lng": 77.3910, "district": "Gautam Buddha Nagar", "state": "Uttar Pradesh"},
+    "gurugram": {"lat": 28.4595, "lng": 77.0266, "district": "Gurugram", "state": "Haryana"},
+    "vashi": {"lat": 19.0771, "lng": 72.9986, "district": "Thane", "state": "Maharashtra"},
+    "mumbai": {"lat": 19.0760, "lng": 72.8777, "district": "Mumbai", "state": "Maharashtra"},
+    "pune": {"lat": 18.5204, "lng": 73.8567, "district": "Pune", "state": "Maharashtra"},
+    "nashik": {"lat": 19.9975, "lng": 73.7898, "district": "Nashik", "state": "Maharashtra"},
+    "lasalgaon": {"lat": 20.1478, "lng": 74.2256, "district": "Nashik", "state": "Maharashtra"},
+    "ludhiana": {"lat": 30.9010, "lng": 75.8573, "district": "Ludhiana", "state": "Punjab"},
+    "khanna": {"lat": 30.7071, "lng": 76.2163, "district": "Ludhiana", "state": "Punjab"},
+    "amritsar": {"lat": 31.6340, "lng": 74.8723, "district": "Amritsar", "state": "Punjab"},
+    "karnal": {"lat": 29.6857, "lng": 76.9905, "district": "Karnal", "state": "Haryana"},
+    "indore": {"lat": 22.7196, "lng": 75.8577, "district": "Indore", "state": "Madhya Pradesh"},
+    "bhopal": {"lat": 23.2599, "lng": 77.4126, "district": "Bhopal", "state": "Madhya Pradesh"},
+    "jaipur": {"lat": 26.9124, "lng": 75.7873, "district": "Jaipur", "state": "Rajasthan"},
+    "kota": {"lat": 25.2138, "lng": 75.8648, "district": "Kota", "state": "Rajasthan"},
+    "kolkata": {"lat": 22.5726, "lng": 88.3639, "district": "Kolkata", "state": "West Bengal"}
+}
+
 
 def resolve_mandi_destination_coordinates(market: str, district: str, state: str) -> Tuple[float, float, str]:
     """
@@ -331,28 +426,52 @@ def resolve_coordinates(
 ) -> Tuple[Optional[float], Optional[float], str]:
     """
     Resolves input into lat, lng, and location label.
-    Supports direct coordinates or district/city names.
+    Supports direct coordinates or district/city/neighborhood names.
+    Uses precision micro-locations, mandi registry, district tables, and state centroids.
     """
-    if lat is not None and lng is not None and lat != 0:
+    if lat is not None and lng is not None and float(lat) != 0 and float(lng) != 0:
         geo = reverse_geocode_coordinates(float(lat), float(lng))
         return float(lat), float(lng), f"Current Location: {geo['label']}"
 
     if location_query:
-        query_clean = clean_text(location_query)
-        # Check against coordinates registry
+        query_clean = clean_text(str(location_query)).lower().strip()
+        if not query_clean:
+            return 23.0225, 72.5714, "Ahmedabad Central Hub"
+
+        # 1. Check MICRO_LOCATIONS by longest match first
+        sorted_micro = sorted(MICRO_LOCATIONS.items(), key=lambda x: len(x[0]), reverse=True)
+        for k, v in sorted_micro:
+            if k in query_clean:
+                loc_desc = f"{v.get('district', '')}, {v.get('state', '')}".strip(', ')
+                label = f"{k.title()} ({loc_desc})" if loc_desc else k.title()
+                return v["lat"], v["lng"], label
+
+        # 2. Check MANDI_COORDINATES
         for name, info in MANDI_COORDINATES.items():
-            if (
-                clean_text(name) == query_clean
-                or clean_text(info.get("district", "")) == query_clean
-                or query_clean.lower() in name.lower()
-            ):
+            n_clean = clean_text(name).lower()
+            d_clean = clean_text(info.get("district", "")).lower()
+            if n_clean == query_clean or (len(n_clean) >= 4 and n_clean in query_clean):
                 return info["lat"], info["lng"], f"{name} ({info.get('state', '')})"
+            if d_clean and len(d_clean) >= 4 and d_clean in query_clean:
+                return info["lat"], info["lng"], f"{name} ({info.get('district', '')})"
 
-        # Fallback to centroid of Maharashtra/Central India if unmapped
-        return 19.9975, 73.7898, f"{location_query} (Estimated from regional hub)"
+        # 3. Check ALL_INDIAN_DISTRICTS
+        for dist_name, dist_info in ALL_INDIAN_DISTRICTS.items():
+            if dist_name in query_clean:
+                return dist_info["lat"], dist_info["lng"], f"{dist_name.title()} District"
 
-    # Default to Nashik/Central agricultural hub
-    return 19.9975, 73.7898, "Nashik Region (Default Agricultural Hub)"
+        # 4. Check STATE_CENTROIDS
+        for state_name, state_info in STATE_CENTROIDS.items():
+            if state_name in query_clean:
+                return state_info["lat"], state_info["lng"], f"{state_name.title()} Region"
+
+        # 5. Gujarat fallback or National fallback
+        if "gujarat" in query_clean:
+            return 23.0225, 72.5714, f"{location_query} (Ahmedabad Hub)"
+
+        return 23.0225, 72.5714, f"{location_query} (Regional Hub)"
+
+    return 23.0225, 72.5714, "Ahmedabad Central Hub"
 
 
 def compare_mandis_for_crop(

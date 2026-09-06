@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext.jsx';
+import RouteMapModal from './RouteMapModal.jsx';
 
 const statuses = ['Assigned', 'Accepted', 'Picked Up', 'In Transit', 'Delivered'];
 
@@ -37,6 +38,10 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [customLocations, setCustomLocations] = useState({});
+
+  // Route Map Modal State
+  const [mapModalData, setMapModalData] = useState({ isOpen: false, routeData: null, delivery: null });
+  const [loadingMap, setLoadingMap] = useState('');
 
   // Two-Sided OTP Verification Modal State
   const [otpModal, setOtpModal] = useState(null); // { type: 'pickup' | 'delivery', delivery: ... }
@@ -114,6 +119,28 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
     }
   };
 
+  const openRouteMap = async (delivery) => {
+    setLoadingMap(delivery.reference);
+    try {
+      const res = await fetch(`/api/deliveries/${delivery.reference}/route`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setMapModalData({
+          isOpen: true,
+          routeData: data.data,
+          delivery: delivery
+        });
+      } else {
+        alert(data.error || 'Could not load route map.');
+      }
+    } catch (err) {
+      console.error('Failed to load route map:', err);
+      alert('Network error while loading route map.');
+    } finally {
+      setLoadingMap('');
+    }
+  };
+
   const acceptDelivery = async (delivery) => {
     setUpdating(delivery.reference);
     try {
@@ -132,6 +159,15 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
       if (!response.ok || !data.success) throw new Error(data.error || 'Unable to accept delivery');
       setDeliveries((current) => current.map((item) => (item.reference === delivery.reference ? data.delivery : item)));
       load();
+
+      // Automatically trigger and display the AI Optimized Route Map right after acceptance
+      if (data.optimized_route) {
+        setMapModalData({
+          isOpen: true,
+          routeData: data.optimized_route,
+          delivery: data.delivery || delivery
+        });
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -318,6 +354,27 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
                   >
                     ● {delivery.status}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => openRouteMap(delivery)}
+                    title="View live GPS route & map on Leaflet"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      background: '#EFF6FF',
+                      color: '#1D4ED8',
+                      border: '1px solid #BFDBFE',
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Navigation size={12} />
+                    <span>{loadingMap === delivery.reference ? 'Loading...' : '🗺️ AI Map'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -536,7 +593,27 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => openRouteMap(delivery)}
+                        style={{
+                          fontSize: '0.78rem',
+                          padding: '6px 12px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: '#EFF6FF',
+                          borderColor: '#BFDBFE',
+                          color: '#1D4ED8'
+                        }}
+                      >
+                        <Navigation size={13} />
+                        {loadingMap === delivery.reference ? 'Loading Map...' : '🗺️ View AI Route & GPS'}
+                      </button>
+
                       {/* Step 1: Claim/Accept */}
                       {delivery.status === 'Assigned' && (
                         <button
@@ -786,6 +863,14 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
           </div>
         </div>
       )}
+
+      {/* AI Route Optimization Interactive Map Modal */}
+      <RouteMapModal
+        isOpen={mapModalData.isOpen}
+        onClose={() => setMapModalData({ isOpen: false, routeData: null, delivery: null })}
+        routeData={mapModalData.routeData}
+        delivery={mapModalData.delivery}
+      />
     </section>
   );
 }
