@@ -62,7 +62,7 @@ export default function SystemOverview({ onNavigate }) {
       points: [
         'Aggregates 2kg-5kg consumer orders into 200kg society pools',
         '1 combined delivery per apartment / college campus',
-        'Farm-to-Fork QR traceability & zero toxic residues',
+        'Verified farmgate origin & zero toxic residues',
         '15-20% discount compared to retail supermarket prices'
       ],
       cta: 'View Community Pools'

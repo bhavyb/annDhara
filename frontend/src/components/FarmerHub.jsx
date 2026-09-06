@@ -14,7 +14,6 @@ import {
   Tag,
   Phone,
   MessageCircle,
-  QrCode,
   Sparkles,
   RefreshCw,
   Clock,
@@ -22,7 +21,6 @@ import {
 } from 'lucide-react';
 import { getCropDisplayName, getCropGujaratiOnly } from '../utils/cropTranslations';
 import { getCropImage } from '../utils/cropImages';
-import TraceabilityModal from './TraceabilityModal.jsx';
 import DeliveryStatusPanel from './DeliveryStatusPanel.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
@@ -33,7 +31,6 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
   const [listings, setListings] = useState([]);
   const [loadingListings, setLoadingListings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedTraceListing, setSelectedTraceListing] = useState(null);
 
   // Harvest Registration Form State
   const [formData, setFormData] = useState({
@@ -586,22 +583,8 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
                         )}
                       </div>
 
-                      {/* Actions: WhatsApp + Traceability */}
+                      {/* Action: WhatsApp */}
                       <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--color-border)', paddingTop: '12px', marginTop: '6px' }}>
-                        <button
-                          className="btn-secondary"
-                          onClick={() => setSelectedTraceListing(item)}
-                          style={{
-                            flex: 1,
-                            padding: '7px 10px',
-                            fontSize: '0.74rem',
-                            justifyContent: 'center',
-                            color: 'var(--color-soil)'
-                          }}
-                        >
-                          <QrCode size={14} /> Farm-to-Fork QR
-                        </button>
-
                         <a
                           href={`https://wa.me/${(item.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
                             `Namaste ${item.farmer_name}, I saw your ${item.crop} listing on AnnDhara.`
@@ -610,18 +593,22 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
                           rel="noreferrer"
                           className="btn-primary"
                           style={{
-                            padding: '7px 14px',
-                            fontSize: '0.75rem',
+                            flex: 1,
+                            padding: '8px 14px',
+                            fontSize: '0.78rem',
                             background: '#25D366',
                             borderColor: '#25D366',
                             color: 'white',
                             textDecoration: 'none',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px'
+                            justifyContent: 'center',
+                            gap: '6px',
+                            borderRadius: '8px',
+                            fontWeight: 600
                           }}
                         >
-                          <MessageCircle size={14} /> WhatsApp
+                          <MessageCircle size={15} /> Connect via WhatsApp
                         </a>
                       </div>
                     </div>
@@ -854,13 +841,6 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
         </div>
       )}
 
-      {/* Farm-to-Fork Modal */}
-      {selectedTraceListing && (
-        <TraceabilityModal
-          listing={selectedTraceListing}
-          onClose={() => setSelectedTraceListing(null)}
-        />
-      )}
     </div>
   );
 }

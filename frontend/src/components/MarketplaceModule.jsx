@@ -17,7 +17,6 @@ import {
   Building2,
   Users,
   Utensils,
-  QrCode,
   Calendar,
   Clock,
   Sparkles,
@@ -28,7 +27,6 @@ import {
 } from 'lucide-react';
 import { getCropDisplayName, getCropGujaratiOnly } from '../utils/cropTranslations';
 import { getCropImage } from '../utils/cropImages';
-import TraceabilityModal from './TraceabilityModal.jsx';
 import DeliveryStatusPanel from './DeliveryStatusPanel.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
@@ -40,7 +38,6 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
   const [filterCrop, setFilterCrop] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [selectedRegionDropdown, setSelectedRegionDropdown] = useState('');
-  const [selectedTraceListing, setSelectedTraceListing] = useState(null);
 
   // Buyer Order & Delivery Booking state
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -497,7 +494,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                       </span>
 
                       <span className="produce-card-badge-top-right">
-                        {l.qr_code_id || `NX-${l.id.toString().padStart(4, '0')}`}
+                        {`LOT-#${l.id.toString().padStart(4, '0')}`}
                       </span>
 
                       <div className="produce-card-price-overlay">
@@ -581,39 +578,25 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                           <Truck size={15} /> {t('buyAndBookDelivery')}
                         </button>
 
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            className="btn-secondary"
-                            onClick={() => setSelectedTraceListing(l)}
-                            style={{
-                              flex: 1,
-                              padding: '6px 8px',
-                              fontSize: '0.74rem',
-                              justifyContent: 'center',
-                              color: 'var(--color-soil)'
-                            }}
-                          >
-                            <QrCode size={13} /> Farm-to-Fork QR
-                          </button>
-
-                          <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="btn-secondary"
-                            style={{
-                              padding: '6px 10px',
-                              fontSize: '0.74rem',
-                              color: '#15803D',
-                              textDecoration: 'none',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <MessageCircle size={13} /> WhatsApp
-                          </a>
-                        </div>
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-secondary"
+                          style={{
+                            width: '100%',
+                            padding: '7px 10px',
+                            fontSize: '0.78rem',
+                            color: '#15803D',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <MessageCircle size={14} /> Contact Farmer via WhatsApp
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -953,13 +936,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
         </div>
       )}
 
-      {/* Farm-to-Fork Traceability Modal */}
-      {selectedTraceListing && (
-        <TraceabilityModal
-          listing={selectedTraceListing}
-          onClose={() => setSelectedTraceListing(null)}
-        />
-      )}
+
 
       {/* Modal: Buy Produce & Order Logistics Delivery */}
       {showOrderModal && orderListing && (
