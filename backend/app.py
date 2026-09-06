@@ -91,6 +91,7 @@ from ai_engine import (
     get_demand_heatmap,
     calculate_sellability_score,
     match_harvest_to_buyers,
+    rank_buyers_for_farmer,
     optimize_shared_logistics_route,
     evaluate_waste_prevention,
     get_farm_to_fork_trace,
@@ -785,6 +786,33 @@ def api_smart_match():
         return jsonify({"success": True, "data": res})
     except Exception as e:
         logger.error(f"Error running smart match: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/smart-match/best-buyer", methods=["POST"])
+def api_smart_match_best_buyer():
+    """
+    POST /api/smart-match/best-buyer
+    Finds and ranks the Best Buyer (#1) + alternative buyers (#2 & #3) for a farmer's produce lot.
+    Ranks candidates based on offer price, volume match, transportation cost, distance, logistics,
+    demand urgency, and farmer net realization.
+    """
+    payload = request.get_json(force=True, silent=True) or {}
+    commodity = (payload.get("commodity") or "Tomato").strip()
+    quantity_kg = float(payload.get("quantity_kg", 500))
+    asking_price = float(payload.get("asking_price_kg", 22.0))
+    location = (payload.get("farmer_location") or payload.get("location") or "Gondal APMC, Rajkot").strip()
+
+    try:
+        res = rank_buyers_for_farmer(
+            commodity=commodity,
+            quantity_kg=quantity_kg,
+            asking_price_kg=asking_price,
+            farmer_location=location
+        )
+        return jsonify({"success": True, **res})
+    except Exception as e:
+        logger.error(f"Error ranking best buyers for farmer: {e}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
 
 

@@ -552,10 +552,263 @@ def match_harvest_to_buyers(
     }
 
 
-# =============================================================================
-# =============================================================================
-# 5. CAPACITATED VEHICLE ROUTE OPTIMIZATION (CVRP HEURISTIC)
-# =============================================================================
+
+def rank_buyers_for_farmer(
+    commodity: str,
+    quantity_kg: float,
+    asking_price_kg: float,
+    farmer_location: str,
+    candidate_buyers: Optional[List[Dict[str, Any]]] = None
+) -> Dict[str, Any]:
+    """
+    Ranks potential institutional and community buyers for a farmer's produce lot.
+    Evaluates buyer offer price, required volume, distance, transport cost, logistics,
+    demand urgency, and calculates estimated farmer net realization (₹/kg & total in-pocket).
+    Returns #1 Best Buyer + alternative buyers with AI scores and explicit ranking reasons.
+    """
+    clean_crop = commodity.strip().title()
+    f_loc_lower = (farmer_location or "").lower()
+
+    # Rich buyer candidate profiles
+    default_buyers = [
+        {
+            "id": 201,
+            "name": "Grand Fortune Hotel & Luxury Banquets",
+            "type": "Hotel / HoReCa",
+            "category": "Premium Hospitality",
+            "location": "SG Highway, Ahmedabad",
+            "base_distance_km": 18.0,
+            "demand_kg": max(150.0, round(quantity_kg * 0.65, 0)),
+            "price_margin_factor": 1.12,  # Pays 12% above asking for Grade-A fresh farmgate
+            "lead_time": "Within 12 Hours",
+            "demand_urgency": "High Daily Demand",
+            "logistics_status": "Dedicated Reefer Van Ready",
+            "payment_terms": "Instant UPI upon farmgate weighment",
+            "contact_phone": "+91 98250 11234"
+        },
+        {
+            "id": 202,
+            "name": "Swagat Express Multi-Cuisine Chain",
+            "type": "Restaurant Chain",
+            "category": "Food & Beverage",
+            "location": "Prahlad Nagar, Ahmedabad",
+            "base_distance_km": 14.0,
+            "demand_kg": max(200.0, round(quantity_kg * 0.80, 0)),
+            "price_margin_factor": 1.06,  # Pays 6% above asking
+            "lead_time": "Immediate (Same-Day)",
+            "demand_urgency": "Urgent Kitchen Replenishment",
+            "logistics_status": "Shared Pickup Route Active",
+            "payment_terms": "Same-day direct bank settlement",
+            "contact_phone": "+91 98251 22345"
+        },
+        {
+            "id": 203,
+            "name": "Reliance Fresh Central Procurement Hub",
+            "type": "Supermarket Procurement",
+            "category": "Organized Retail",
+            "location": "Koba Circle, Gandhinagar",
+            "base_distance_km": 34.0,
+            "demand_kg": max(500.0, round(quantity_kg * 1.5, 0)),  # Can absorb full lot
+            "price_margin_factor": 1.01,  # Market standard rate, absorbs large volume
+            "lead_time": "Within 24 Hours",
+            "demand_urgency": "Consistent Weekly Volume",
+            "logistics_status": "Heavy EECO / 407 Truck Available",
+            "payment_terms": "AnnDhara Zero-Fee Escrow (T+1)",
+            "contact_phone": "+91 98252 33456"
+        },
+        {
+            "id": 204,
+            "name": "Shivalik Heights Society Direct Pool",
+            "type": "Smart Community Pool",
+            "category": "Direct Consumer Group",
+            "location": "Bodakdev, Ahmedabad",
+            "base_distance_km": 21.0,
+            "demand_kg": max(120.0, round(quantity_kg * 0.50, 0)),
+            "price_margin_factor": 1.08,  # Consumer pool cuts out middlemen and shares profit
+            "lead_time": "Same-Day Evening",
+            "demand_urgency": "Society Group Order Closes at 4 PM",
+            "logistics_status": "AnnDhara Hyperlocal Electric Carrier",
+            "payment_terms": "Prepaid Smart Contract",
+            "contact_phone": "+91 98253 44567"
+        },
+        {
+            "id": 205,
+            "name": "Kissan Agro Food Processing & Puree Unit",
+            "type": "Food Processing Unit",
+            "category": "Agro Processing",
+            "location": "Sanand GIDC, Ahmedabad",
+            "base_distance_km": 42.0,
+            "demand_kg": max(800.0, round(quantity_kg * 2.0, 0)),  # Bulk volume absorber
+            "price_margin_factor": 0.94,  # Bulk processing rate
+            "lead_time": "Within 36 Hours",
+            "demand_urgency": "Continuous Processing Run",
+            "logistics_status": "Bulk Bulkhead Container Carrier",
+            "payment_terms": "Guaranteed Direct Clearance",
+            "contact_phone": "+91 98254 55678"
+        },
+        {
+            "id": 206,
+            "name": "Nature Fresh Gourmet & Organics",
+            "type": "Gourmet Direct Retailer",
+            "category": "Organic Direct Store",
+            "location": "Sindhu Bhavan Road, Ahmedabad",
+            "base_distance_km": 24.0,
+            "demand_kg": max(100.0, round(quantity_kg * 0.40, 0)),
+            "price_margin_factor": 1.15,  # Premium price for organic/A-grade
+            "lead_time": "Within 18 Hours",
+            "demand_urgency": "Specialty Fresh Produce Counter",
+            "logistics_status": "Cold-Chain Van Equipped",
+            "payment_terms": "Instant Digital Payout",
+            "contact_phone": "+91 98255 66789"
+        }
+    ]
+
+    buyers = candidate_buyers if candidate_buyers else default_buyers
+    scored_buyers = []
+
+    for b in buyers:
+        # Distance calculation
+        dist = float(b.get("base_distance_km", 20.0))
+        b_loc = b.get("location", "").lower()
+        if f_loc_lower and (f_loc_lower in b_loc or b_loc in f_loc_lower):
+            dist = max(5.0, round(dist * 0.5, 1))
+        elif "rajkot" in f_loc_lower or "gondal" in f_loc_lower:
+            dist = round(dist + 65.0, 1)
+        elif "surat" in f_loc_lower:
+            dist = round(dist + 120.0, 1)
+
+        # Buyer Offer Price
+        margin = float(b.get("price_margin_factor", 1.0))
+        buyer_offer_price = round(asking_price_kg * margin, 2)
+
+        # Transport cost estimation (transit rate per kg based on distance & logistics mode)
+        # Typically ₹0.02 to ₹0.035 per kg per km, minimum ₹0.50/kg, maximum ₹3.20/kg
+        transport_cost_per_kg = round(max(0.45, min(3.20, dist * 0.028)), 2)
+
+        # Farmer Net Realization
+        net_realization_per_kg = round(max(1.0, buyer_offer_price - transport_cost_per_kg), 2)
+        required_qty = float(b.get("demand_kg", quantity_kg))
+        matched_qty = round(min(quantity_kg, required_qty), 1)
+        total_gross_offer = round(buyer_offer_price * matched_qty, 2)
+        total_transport_cost = round(transport_cost_per_kg * matched_qty, 2)
+        total_net_realization = round(net_realization_per_kg * matched_qty, 2)
+
+        # 1. Net Realization Score (35% weight)
+        # Compare net realization against asking price
+        if net_realization_per_kg >= asking_price_kg:
+            gain_pct = ((net_realization_per_kg - asking_price_kg) / max(1.0, asking_price_kg)) * 100.0
+            net_score = min(100.0, 85.0 + gain_pct * 2.0)
+        else:
+            loss_pct = ((asking_price_kg - net_realization_per_kg) / max(1.0, asking_price_kg)) * 100.0
+            net_score = max(35.0, 75.0 - loss_pct * 2.0)
+
+        # 2. Quantity Match Score (25% weight)
+        absorption_ratio = matched_qty / max(1.0, quantity_kg)
+        qty_score = min(100.0, max(45.0, absorption_ratio * 95.0 + (5.0 if required_qty >= quantity_kg else 0.0)))
+
+        # 3. Distance & Logistics Efficiency (20% weight)
+        dist_score = max(30.0, 100.0 - dist * 0.60)
+
+        # 4. Demand Urgency & Payment Reliability (20% weight)
+        urgency_map = {
+            "Hotel / HoReCa": 95.0,
+            "Restaurant Chain": 92.0,
+            "Smart Community Pool": 96.0,
+            "Supermarket Procurement": 90.0,
+            "Gourmet Direct Retailer": 93.0,
+            "Food Processing Unit": 82.0
+        }
+        urgency_score = urgency_map.get(b.get("type"), 88.0)
+
+        total_match_score = round(
+            net_score * 0.35 +
+            qty_score * 0.25 +
+            dist_score * 0.20 +
+            urgency_score * 0.20,
+            1
+        )
+
+        scored_buyers.append({
+            "buyer_id": b["id"],
+            "buyer_name": b["name"],
+            "buyer_type": b["type"],
+            "category": b.get("category", "Direct Buyer"),
+            "location": b["location"],
+            "distance_km": dist,
+            "buyer_offer_price_kg": buyer_offer_price,
+            "required_quantity_kg": required_qty,
+            "matched_quantity_kg": matched_qty,
+            "transport_cost_per_kg": transport_cost_per_kg,
+            "estimated_net_realization_kg": net_realization_per_kg,
+            "total_gross_offer_inr": total_gross_offer,
+            "total_transport_inr": total_transport_cost,
+            "total_net_realization_inr": total_net_realization,
+            "lead_time": b.get("lead_time", "Within 24 Hours"),
+            "demand_urgency": b.get("demand_urgency", "Active Demand"),
+            "logistics_status": b.get("logistics_status", "Fleet Available"),
+            "payment_terms": b.get("payment_terms", "Verified Digital Settlement"),
+            "contact_phone": b.get("contact_phone", "+91 98250 00000"),
+            "match_score": total_match_score,
+            "net_vs_asking_diff": round(net_realization_per_kg - asking_price_kg, 2)
+        })
+
+    # Sort descending by match_score
+    scored_buyers.sort(key=lambda x: (x["match_score"], x["estimated_net_realization_kg"]), reverse=True)
+
+    # Assign badges and detailed human-readable AI ranking rationale
+    for i, sb in enumerate(scored_buyers):
+        rank = i + 1
+        diff = sb["net_vs_asking_diff"]
+        diff_str = f"+₹{diff}/kg above asking" if diff >= 0 else f"₹{abs(diff)}/kg transit adjusted"
+        if rank == 1:
+            sb["badge"] = "🏆 #1 BEST BUYER MATCH"
+            sb["badge_color"] = "var(--color-crop)"
+            sb["ranking_reason"] = (
+                f"Top Net Realization: Premium offer rate of ₹{sb['buyer_offer_price_kg']}/kg "
+                f"yields ₹{sb['estimated_net_realization_kg']}/kg net in-pocket ({diff_str}) "
+                f"after ₹{sb['transport_cost_per_kg']}/kg transport. {sb['lead_time']} pickup with {sb['demand_urgency']}."
+            )
+        elif rank == 2:
+            sb["badge"] = "🥈 Alternative Buyer #2"
+            sb["badge_color"] = "#2563EB"
+            sb["ranking_reason"] = (
+                f"Strong Alternative #{rank}: Reliable offer of ₹{sb['buyer_offer_price_kg']}/kg absorbing {sb['matched_quantity_kg']} kg "
+                f"with ₹{sb['transport_cost_per_kg']}/kg transit (₹{sb['estimated_net_realization_kg']}/kg net). {sb['lead_time']} turnaround."
+            )
+        elif rank == 3:
+            sb["badge"] = "🥉 Alternative Buyer #3"
+            sb["badge_color"] = "#7C3AED"
+            sb["ranking_reason"] = (
+                f"Alternative #{rank}: Absorbs {sb['matched_quantity_kg']} kg at ₹{sb['buyer_offer_price_kg']}/kg offer "
+                f"yielding ₹{sb['estimated_net_realization_kg']}/kg net realization with {sb['logistics_status']}."
+            )
+        else:
+            sb["badge"] = f"Alternative Buyer #{rank}"
+            sb["badge_color"] = "#4B5563"
+            sb["ranking_reason"] = (
+                f"Candidate #{rank}: ₹{sb['buyer_offer_price_kg']}/kg offer with ₹{sb['estimated_net_realization_kg']}/kg net realization."
+            )
+
+    top_buyer = scored_buyers[0] if scored_buyers else None
+    top_alternatives = scored_buyers[1:3] if len(scored_buyers) > 1 else []
+
+    return {
+        "commodity": clean_crop,
+        "harvest_quantity_kg": quantity_kg,
+        "asking_price_kg": asking_price_kg,
+        "farmer_location": farmer_location,
+        "best_buyer": top_buyer,
+        "top_alternatives": top_alternatives,
+        "ranked_buyers": scored_buyers,
+        "total_candidates": len(scored_buyers),
+        "ai_verdict": (
+            f"Evaluated {len(scored_buyers)} institutional buyers. {top_buyer['buyer_name']} ranked #1 "
+            f"with {top_buyer['match_score']}% AI Score, delivering maximum net realization of ₹{top_buyer['estimated_net_realization_kg']}/kg "
+            f"(₹{top_buyer['total_net_realization_inr']:,} total)."
+            if top_buyer else "No candidate buyers matched current criteria."
+        )
+    }
+
 
 def get_route_geometry(coords: List[Tuple[float, float]]) -> List[List[float]]:
     """
