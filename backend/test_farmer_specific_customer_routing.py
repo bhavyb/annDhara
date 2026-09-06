@@ -46,57 +46,61 @@ def test_farmer_specific_doorstep_routing():
         "vehicle_capacity_kg": 1000.0,
         "cost_per_km": 24.0
     })
-    assert resp.status_code == 200, f"Error: {resp.data}"
-    data = resp.get_json()["data"]
-    stops = data.get("route_sequence") or data.get("route_stops")
+    try:
+        assert resp.status_code == 200, f"Error: {resp.data}"
+        data = resp.get_json()["data"]
+        stops = data.get("route_sequence") or data.get("route_stops")
 
-    pickup_entities = [s["entity"] for s in stops if s["type"] == "PICKUP"]
-    delivery_entities = [s["entity"] for s in stops if s["type"] == "DELIVERY"]
+        pickup_entities = [s["entity"] for s in stops if s["type"] == "PICKUP"]
+        delivery_entities = [s["entity"] for s in stops if s["type"] == "DELIVERY"]
 
-    print("\nGenerated Stops:")
-    for s in stops:
-        from_tag = f" (Harvest from: {s.get('from_farmer')})" if s.get("from_farmer") else ""
-        cust_tag = f" (Target: {s.get('target_customers')})" if s.get("target_customers") else ""
-        print(f"  Step #{s['step']} [{s['type']}]: {s['entity']}{from_tag}{cust_tag}")
+        print("\nGenerated Stops:")
+        for s in stops:
+            from_tag = f" (Harvest from: {s.get('from_farmer')})" if s.get("from_farmer") else ""
+            cust_tag = f" (Target: {s.get('target_customers')})" if s.get("target_customers") else ""
+            print(f"  Step #{s['step']} [{s['type']}]: {s['entity']}{from_tag}{cust_tag}")
 
-    # Assert Pickups
-    assert o1["farmer_name"] in pickup_entities, f"{o1['farmer_name']} should be in pickup stops"
-    assert o2["farmer_name"] in pickup_entities, f"{o2['farmer_name']} should be in pickup stops"
-    assert o3["farmer_name"] not in pickup_entities, f"{o3['farmer_name']} must NOT be in pickup stops"
+        assert any(o1["farmer_name"] == e for e in pickup_entities), f"{o1['farmer_name']} must be in pickup stops"
+        assert any(o2["farmer_name"] == e for e in pickup_entities), f"{o2['farmer_name']} must be in pickup stops"
+        assert not any(o3["farmer_name"] == e for e in pickup_entities), f"{o3['farmer_name']} must NOT be in pickup stops"
 
-    # Assert Deliveries (CRITICAL USER REQUIREMENT: only customers who ordered from selected farmers)
-    assert any(o1["buyer_name"].lower() == e.lower() for e in delivery_entities), f"{o1['buyer_name']} MUST be in delivery stops"
-    assert any(o2["buyer_name"].lower() == e.lower() for e in delivery_entities), f"{o2['buyer_name']} MUST be in delivery stops"
-    assert not any(o3["buyer_name"].lower() == e.lower() for e in delivery_entities), f"{o3['buyer_name']} must NEVER be in delivery stops!"
+        assert any(o1["buyer_name"].lower() == e.lower() for e in delivery_entities), f"{o1['buyer_name']} must be in delivery stops"
+        assert any(o2["buyer_name"].lower() == e.lower() for e in delivery_entities), f"{o2['buyer_name']} must be in delivery stops"
+        assert not any(o3["buyer_name"].lower() == e.lower() for e in delivery_entities), f"{o3['buyer_name']} must NEVER be in delivery stops!"
 
-    # Verify each delivery stop correctly attributes the harvest source farmer
-    d1 = next(s for s in stops if s["type"] == "DELIVERY" and s["entity"].lower() == o1["buyer_name"].lower())
-    assert d1["from_farmer"] == o1["farmer_name"], f"Expected '{o1['farmer_name']}', got '{d1['from_farmer']}'"
+        # Verify each delivery stop correctly attributes the harvest source farmer
+        d1 = next(s for s in stops if s["type"] == "DELIVERY" and s["entity"].lower() == o1["buyer_name"].lower())
+        assert d1["from_farmer"] == o1["farmer_name"], f"Expected '{o1['farmer_name']}', got '{d1['from_farmer']}'"
 
-    d2 = next(s for s in stops if s["type"] == "DELIVERY" and s["entity"].lower() == o2["buyer_name"].lower())
-    assert d2["from_farmer"] == o2["farmer_name"], f"Expected '{o2['farmer_name']}', got '{d2['from_farmer']}'"
+        d2 = next(s for s in stops if s["type"] == "DELIVERY" and s["entity"].lower() == o2["buyer_name"].lower())
+        assert d2["from_farmer"] == o2["farmer_name"], f"Expected '{o2['farmer_name']}', got '{d2['from_farmer']}'"
 
-    # Verify OTP Verification on the generated stops
-    p1 = next(s for s in stops if s["type"] == "PICKUP" and s["entity"] == "Rameshbhai Patel")
-    otp_verify_p1 = client.post("/api/route-optimize/verify-stop", json={
-        "stop_id": p1["stop_id"],
-        "otp": str(o1["pickup_otp"]),
-        "reference": o1["reference"],
-        "stop_type": "pickup",
-        "entity": p1["entity"]
-    })
-    assert otp_verify_p1.status_code == 200 and otp_verify_p1.get_json()["success"]
-    print("\nVerified Farmer Pickup OTP successfully.")
+        # Verify OTP Verification on the generated stops
+        p1 = next(s for s in stops if s["type"] == "PICKUP" and s["entity"] == "Rameshbhai Patel")
+        otp_verify_p1 = client.post("/api/route-optimize/verify-stop", json={
+            "stop_id": p1["stop_id"],
+            "otp": str(o1["pickup_otp"]),
+            "reference": o1["reference"],
+            "stop_type": "pickup",
+            "entity": p1["entity"]
+        })
+        assert otp_verify_p1.status_code == 200 and otp_verify_p1.get_json()["success"]
+        print("\nVerified Farmer Pickup OTP successfully.")
 
-    otp_verify_d1 = client.post("/api/route-optimize/verify-stop", json={
-        "stop_id": d1["stop_id"],
-        "otp": str(o1["delivery_otp"]),
-        "reference": o1["reference"],
-        "stop_type": "delivery",
-        "entity": d1["entity"]
-    })
-    assert otp_verify_d1.status_code == 200 and otp_verify_d1.get_json()["success"]
-    print("Verified Customer Doorstep Delivery OTP successfully.")
+        otp_verify_d1 = client.post("/api/route-optimize/verify-stop", json={
+            "stop_id": d1["stop_id"],
+            "otp": str(o1["delivery_otp"]),
+            "reference": o1["reference"],
+            "stop_type": "delivery",
+            "entity": d1["entity"]
+        })
+        assert otp_verify_d1.status_code == 200 and otp_verify_d1.get_json()["success"]
+        print("Verified Customer Doorstep Delivery OTP successfully.")
+    finally:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM delivery_updates WHERE reference IN (?, ?, ?)", (o1["reference"], o2["reference"], o3["reference"]))
+            conn.commit()
+        print("Cleaned up temporary test orders from database.")
 
     print("\nALL FARMER-SPECIFIC DOORSTEP ROUTING TESTS PASSED PERFECTLY!")
 

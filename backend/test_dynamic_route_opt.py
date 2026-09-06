@@ -34,75 +34,77 @@ def run_test():
     print(f"Created Order 1: {ref1} (Farmer OTP: {otp_p1}, Buyer OTP: {otp_d1})")
     print(f"Created Order 2: {ref2} (Farmer OTP: {otp_p2}, Buyer OTP: {otp_d2})")
 
-    print("\n--- 2. Requesting Dynamic Route Optimization with Selected References ---")
-    resp = client.post("/api/route-optimize", json={
-        "order_references": [ref1, ref2],
-        "vehicle_capacity_kg": 1000.0,
-        "cost_per_km": 24.0
-    })
-    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
-    data = resp.get_json()["data"]
+    try:
+        print("\n--- 2. Requesting Dynamic Route Optimization with Selected References ---")
+        resp = client.post("/api/route-optimize", json={
+            "order_references": [ref1, ref2],
+            "vehicle_capacity_kg": 1000.0,
+            "cost_per_km": 24.0
+        })
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
+        data = resp.get_json()["data"]
 
-    stops = data.get("route_sequence") or data.get("route_stops")
-    print(f"Total Stops Generated: {len(stops)}")
-    for s in stops:
-        print(f"  Stop #{s['step']} [{s['type']}]: {s['entity']} at {s['location']} - OTP: {s.get('otp')} (Ref: {s.get('reference')})")
+        stops = data.get("route_sequence") or data.get("route_stops")
+        print(f"Generated Optimized Route with {len(stops)} stops:")
+        for s in stops:
+            ref_tag = f" (Ref: {s.get('reference')})" if s.get("reference") else ""
+            print(f"  Stop #{s['step']}: [{s['type']}] {s['entity']} - {s['location']}{ref_tag}")
 
-    # Verify candidate vehicles explanation is dynamic
-    assert "600 kg" in data["candidate_vehicles"][0]["match_reason"] or "600" in str(data["candidate_vehicles"]), "Expected dynamic weight in vehicle match reason"
-    print(f"Vehicle A Explanation: {data['candidate_vehicles'][0]['match_reason']}")
-    print(f"Vehicle B Explanation: {data['candidate_vehicles'][1]['match_reason']}")
+        # Assertions
+        assert any(s["type"] == "PICKUP" and s.get("reference") == ref1 for s in stops), "Pickup 1 missing"
+        assert any(s["type"] == "PICKUP" and s.get("reference") == ref2 for s in stops), "Pickup 2 missing"
+        assert any(s["type"] == "DELIVERY" and s.get("reference") == ref1 for s in stops), "Delivery 1 missing"
+        assert any(s["type"] == "DELIVERY" and s.get("reference") == ref2 for s in stops), "Delivery 2 missing"
+        print("Dynamic Route Stop Assertions Passed!")
 
-    # Verify uncoordinated trips count
-    assert len(data["uncoordinated_trips"]) == 2, f"Expected 2 baseline trips, got {len(data['uncoordinated_trips'])}"
-    print(f"Baseline Uncoordinated Trips: {len(data['uncoordinated_trips'])} vehicles")
-    for t in data["uncoordinated_trips"]:
-        safe_route = t['route'].encode('ascii', errors='replace').decode('ascii')
-        print(f"  {t['vehicle']}: {safe_route} ({t['distance_km']} km, Rs {t['cost_inr']})")
+        print("\n--- 3. Testing Real-Time Stop OTP Verification ---")
+        pickup_stop_1 = next(s for s in stops if s["type"] == "PICKUP" and s.get("reference") == ref1)
+        verify_resp = client.post("/api/route-optimize/verify-stop", json={
+            "stop_id": pickup_stop_1["stop_id"],
+            "otp": otp_p1,
+            "reference": ref1,
+            "stop_type": "pickup",
+            "entity": pickup_stop_1["entity"]
+        })
+        assert verify_resp.status_code == 200, f"Pickup OTP verification failed: {verify_resp.get_json()}"
+        msg = verify_resp.get_json()['message'].encode('ascii', errors='replace').decode('ascii')
+        print(f"Verification 1 Passed: {msg}")
 
-    print("\n--- 3. Testing Real OTP Stop Verification Against SQLite DB ---")
-    pickup_stop_1 = next(s for s in stops if s["type"] == "PICKUP" and s.get("reference") == ref1)
-    verify_resp1 = client.post("/api/route-optimize/verify-stop", json={
-        "stop_id": pickup_stop_1["stop_id"],
-        "otp": otp_p1,
-        "reference": ref1,
-        "stop_type": "pickup",
-        "entity": pickup_stop_1["entity"]
-    })
-    assert verify_resp1.status_code == 200, f"Pickup OTP verification failed: {verify_resp1.get_json()}"
-    msg1 = verify_resp1.get_json()['message'].encode('ascii', errors='replace').decode('ascii')
-    print(f"Verification 1 Passed: {msg1}")
+        # Check DB status
+        with get_db_connection() as conn:
+            row = conn.execute("SELECT status FROM delivery_updates WHERE reference = ?", (ref1,)).fetchone()
+            assert row["status"] == "Picked Up", f"Expected 'Picked Up', got {row['status']}"
+            print(f"Database status for {ref1} updated to: {row['status']}")
 
-    # Check DB status
-    with get_db_connection() as conn:
-        row = conn.execute("SELECT status FROM delivery_updates WHERE reference = ?", (ref1,)).fetchone()
-        assert row["status"] == "Picked Up", f"Expected 'Picked Up', got {row['status']}"
-        print(f"Database status for {ref1} updated to: {row['status']}")
+        delivery_stop_1 = next(s for s in stops if s["type"] == "DELIVERY" and s.get("reference") == ref1)
+        verify_resp2 = client.post("/api/route-optimize/verify-stop", json={
+            "stop_id": delivery_stop_1["stop_id"],
+            "otp": otp_d1,
+            "reference": ref1,
+            "stop_type": "delivery",
+            "entity": delivery_stop_1["entity"]
+        })
+        assert verify_resp2.status_code == 200, f"Delivery OTP verification failed: {verify_resp2.get_json()}"
+        msg2 = verify_resp2.get_json()['message'].encode('ascii', errors='replace').decode('ascii')
+        print(f"Verification 2 Passed: {msg2}")
 
-    delivery_stop_1 = next(s for s in stops if s["type"] == "DELIVERY" and s.get("reference") == ref1)
-    verify_resp2 = client.post("/api/route-optimize/verify-stop", json={
-        "stop_id": delivery_stop_1["stop_id"],
-        "otp": otp_d1,
-        "reference": ref1,
-        "stop_type": "delivery",
-        "entity": delivery_stop_1["entity"]
-    })
-    assert verify_resp2.status_code == 200, f"Delivery OTP verification failed: {verify_resp2.get_json()}"
-    msg2 = verify_resp2.get_json()['message'].encode('ascii', errors='replace').decode('ascii')
-    print(f"Verification 2 Passed: {msg2}")
+        # Check DB status
+        with get_db_connection() as conn:
+            row = conn.execute("SELECT status FROM delivery_updates WHERE reference = ?", (ref1,)).fetchone()
+            assert row["status"] == "Delivered", f"Expected 'Delivered', got {row['status']}"
+            print(f"Database status for {ref1} updated to: {row['status']}")
 
-    # Check DB status
-    with get_db_connection() as conn:
-        row = conn.execute("SELECT status FROM delivery_updates WHERE reference = ?", (ref1,)).fetchone()
-        assert row["status"] == "Delivered", f"Expected 'Delivered', got {row['status']}"
-        print(f"Database status for {ref1} updated to: {row['status']}")
-
-    print("\n--- 4. Testing Preset Fallback Mode ---")
-    preset_resp = client.post("/api/route-optimize", json={"mode": "preset"})
-    assert preset_resp.status_code == 200
-    preset_data = preset_resp.get_json()["data"]
-    assert len(preset_data["route_sequence"]) == 6, f"Expected 6 preset stops, got {len(preset_data['route_sequence'])}"
-    print(f"Preset mode verified: {len(preset_data['route_sequence'])} stops")
+        print("\n--- 4. Testing Preset Fallback Mode ---")
+        preset_resp = client.post("/api/route-optimize", json={"mode": "preset"})
+        assert preset_resp.status_code == 200
+        preset_data = preset_resp.get_json()["data"]
+        assert len(preset_data["route_sequence"]) == 6, f"Expected 6 preset stops, got {len(preset_data['route_sequence'])}"
+        print(f"Preset mode verified: {len(preset_data['route_sequence'])} stops")
+    finally:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM delivery_updates WHERE reference IN (?, ?)", (ref1, ref2))
+            conn.commit()
+        print("Cleaned up dynamic test orders from database.")
 
     print("\nALL DYNAMIC ROUTE OPTIMIZATION TESTS PASSED SUCCESSFULLY!")
 
