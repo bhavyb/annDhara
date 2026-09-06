@@ -46,7 +46,7 @@ export default function AuthScreen({ onAuthenticated }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           <div className="brand-icon"><Sprout size={28} /></div>
           <div>
-            <span className="eyebrow" style={{ display: 'block' }}>ANNDHARA FARM-TO-MARKET NETWORK</span>
+            <span className="eyebrow notranslate" translate="no" style={{ display: 'block' }}>ANNDHARA FARM-TO-MARKET NETWORK</span>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--palette-forest)' }}>Direct Mandi & Logistics Grid</span>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function AuthScreen({ onAuthenticated }) {
           <button className={mode === 'register' ? 'active' : ''} onClick={() => { setMode('register'); setError(''); }}>Create account</button>
         </div>
         <div className="auth-heading">
-          <h2>{mode === 'login' ? 'Welcome back' : 'Join annDhara'}</h2>
+          <h2>{mode === 'login' ? 'Welcome back' : 'Join AnnDhara'}</h2>
           <p>{mode === 'login' ? 'Sign in to your stakeholder workspace.' : 'Choose your role to get a workspace built for you.'}</p>
         </div>
         <div className="role-picker">

@@ -352,7 +352,7 @@ function AppContent() {
           }}
         >
           <div>
-            <strong>{t('brandTitle', 'AnnDhara')}</strong> • {t('footerNetwork')}
+            <strong className="notranslate" translate="no">{t('brandTitle', 'AnnDhara')}</strong> • {t('footerNetwork')}
           </div>
           <div>{t('footerSub')}</div>
         </footer>

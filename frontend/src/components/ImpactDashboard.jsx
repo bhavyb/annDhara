@@ -301,7 +301,7 @@ export default function ImpactDashboard() {
               padding: '18px'
             }}
           >
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--color-crop)', textTransform: 'uppercase', marginBottom: '10px' }}>
+            <div className="notranslate" translate="no" style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--color-crop)', textTransform: 'uppercase', marginBottom: '10px' }}>
               AnnDhara Demand-to-Delivery Platform
             </div>
 

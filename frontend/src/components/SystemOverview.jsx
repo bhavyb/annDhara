@@ -120,7 +120,7 @@ export default function SystemOverview({ onNavigate }) {
               marginBottom: '24px'
             }}
           >
-            Moving beyond simple e-commerce: annDhara predicts demand before harvest, connects
+            Moving beyond simple e-commerce: <strong className="notranslate" translate="no">AnnDhara</strong> predicts demand before harvest, connects
             farmers & FPOs directly with institutional bulk buyers and apartment community pools,
             optimizes multi-stop shared logistics, and secures transactions with driver-exclusive OTP handoffs.
           </p>
@@ -169,7 +169,7 @@ export default function SystemOverview({ onNavigate }) {
         </div>
       </section>
 
-      {/* Traditional vs annDhara Side-by-Side Comparison */}
+      {/* Traditional vs AnnDhara Side-by-Side Comparison */}
       <section>
         <div style={{ marginBottom: '18px' }}>
           <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--color-soil-dark)' }}>
@@ -237,7 +237,7 @@ export default function SystemOverview({ onNavigate }) {
             </ul>
           </div>
 
-          {/* annDhara Demand-to-Delivery Card */}
+          {/* AnnDhara Demand-to-Delivery Card */}
           <div
             className="nexus-card"
             style={{
@@ -247,13 +247,13 @@ export default function SystemOverview({ onNavigate }) {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <CheckCircle2 size={20} color="var(--color-crop)" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-crop)' }}>
-                annDhara Demand-to-Delivery Network
+              <h3 className="notranslate" translate="no" style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-crop)' }}>
+                AnnDhara Demand-to-Delivery Network
               </h3>
             </div>
 
             <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
-              Farmer / FPO (₹24) → <strong>annDhara AI Network</strong> (+₹3.5 Logistics + ₹1.5 Fair Fee) → <strong>Buyer pays ₹29/kg</strong>
+              Farmer / FPO (₹24) → <strong className="notranslate" translate="no">AnnDhara AI Network</strong> (+₹3.5 Logistics + ₹1.5 Fair Fee) → <strong>Buyer pays ₹29/kg</strong>
             </div>
 
             <div
@@ -347,7 +347,7 @@ export default function SystemOverview({ onNavigate }) {
               boxShadow: 'var(--shadow-sm)'
             }}
           >
-            <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-soil-dark)', marginBottom: '8px' }}>
+            <div className="notranslate" translate="no" style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-soil-dark)', marginBottom: '8px' }}>
               🌐 ANNDHARA DIGITAL INTELLIGENCE MARKETPLACE
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', maxWidth: '640px', margin: '0 auto' }}>

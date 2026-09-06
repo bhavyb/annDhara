@@ -1,4 +1,4 @@
-# Nexus — AI-Powered Farm-to-Market Intelligence Platform
+# AnnDhara — AI-Powered Farm-to-Market Intelligence Platform
 ### *AI-Powered Demand-to-Delivery Agricultural Network*
 
 **Smart India Hackathon (SIH Problem Statement SIH26033)**  
@@ -32,7 +32,7 @@ The issue is not merely that intermediaries exist (logistics and aggregation are
 
 ## 2. Positioning & Solution: Demand-to-Delivery Network
 
-Nexus is an **AI-Powered Farm-to-Market Intelligence Platform** that connects **Farmers/FPOs** directly with **Bulk Buyers** (Hotels, Hostels, Supermarkets, Food Processors) and **Smart Community Consumer Pools** (Apartments, Societies, Colleges) while utilizing an AI engine for:
+AnnDhara is an **AI-Powered Farm-to-Market Intelligence Platform** that connects **Farmers/FPOs** directly with **Bulk Buyers** (Hotels, Hostels, Supermarkets, Food Processors) and **Smart Community Consumer Pools** (Apartments, Societies, Colleges) while utilizing an AI engine for:
 - **Pre-Harvest Demand Forecasting** (predicting daily kg demand 7 days ahead by region)
 - **Smart Buyer Multi-Allocation** (matching single harvests across multiple buyers to guarantee zero leftover stock)
 - **Shared Logistics & Capacitated Vehicle Routing (CVRP)** (consolidating multi-farmer pickups into single vehicle runs)
@@ -55,7 +55,7 @@ Nexus is an **AI-Powered Farm-to-Market Intelligence Platform** that connects **
 
 ## 4. The 8 Working Prototype Screens & Modules
 
-1. **System Overview & Pitch**: End-to-end architecture flow, traditional vs Nexus supply chain margin breakdown (₹15 vs ₹24 farmgate), and stakeholder quick-access cards.
+1. **System Overview & Pitch**: End-to-end architecture flow, traditional vs AnnDhara supply chain margin breakdown (₹15 vs ₹24 farmgate), and stakeholder quick-access cards.
 2. **Farmer & FPO Producer Portal**: Harvest registration (immediate & pre-harvest), **AI Sellability Score (%)** gauge, Fair Price Anchor, and active listings.
 3. **Direct Buyer Marketplace**: Three channels: **Direct Farmgate Listings** (with WhatsApp & Farm-to-Fork QR), **Institutional Bulk Demands** (HoReCa requisitions), and **Smart Community Pools** (society group orders).
 4. **AI Demand Forecast Dashboard**: Recharts 14-day historical ingestion + 7-day predicted forward demand (kg/day) by location and commodity with model signal weights.
@@ -87,7 +87,7 @@ Nexus is an **AI-Powered Farm-to-Market Intelligence Platform** that connects **
 | `POST` | `/api/community-pools/pledge` | Pledge kg to a community society pool |
 | `GET` | `/api/waste-prevention` | Scans perishable inventory and triggers dynamic rescue workflows |
 | `GET` | `/api/traceability/<id>` | Verifiable farm-to-fork origin and cold-chain timeline |
-| `GET` | `/api/impact-metrics` | Macro KPIs & traditional vs nexus margin split |
+| `GET` | `/api/impact-metrics` | Macro KPIs & traditional vs AnnDhara margin split |
 | `POST` | `/api/markup-check` | Intermediary markup calculation & anti-gouging verdict |
 
 ---

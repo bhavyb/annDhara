@@ -75,7 +75,7 @@ export default function Header({ statusData, onRefreshSuccess, user, onLogout })
               <Sprout size={26} strokeWidth={2.4} />
             </div>
             <div>
-              <div className="brand-title">
+              <div className="brand-title notranslate" translate="no">
                 {t('brandTitle', 'AnnDhara')}
               </div>
               <div className="brand-tagline">
