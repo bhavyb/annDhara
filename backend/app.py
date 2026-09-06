@@ -1135,17 +1135,13 @@ def api_route_optimize():
             selected_farmers=selected_farmers
         )
 
-        # Attach demo_otp for streamlined testing & demonstration while maintaining schema
+        # Redact secret OTPs completely from the logistics / carrier response
         for s in (route_data.get("route_sequence") or []):
-            raw_code = str(s.get("otp", "")).strip()
-            if raw_code:
-                s["demo_otp"] = raw_code
             s.pop("otp", None)
+            s.pop("demo_otp", None)
         for s in (route_data.get("route_stops") or []):
-            raw_code = str(s.get("otp", "")).strip()
-            if raw_code:
-                s["demo_otp"] = raw_code
             s.pop("otp", None)
+            s.pop("demo_otp", None)
 
         return jsonify({"success": True, "data": route_data})
     except Exception as e:
@@ -1198,7 +1194,7 @@ def api_route_optimize_verify_stop():
     if not expected_otp:
         route_data = optimize_shared_logistics_route()
         for s in (route_data.get("route_sequence") or route_data.get("route_stops") or []):
-            if s.get("stop_id") == stop_id:
+            if str(s.get("stop_id", "")).strip().upper() == stop_id.strip().upper():
                 expected_otp = str(s.get("otp", ""))
                 stop_type = s.get("otp_type", stop_type)
                 entity_name = s.get("entity", entity_name)

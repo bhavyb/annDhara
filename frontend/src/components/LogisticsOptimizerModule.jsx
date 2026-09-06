@@ -322,7 +322,6 @@ export default function LogisticsOptimizerModule({ user }) {
         body: JSON.stringify({
           stop_id: stop.stop_id,
           otp: code,
-          expected_otp: stop.demo_otp || '',
           stop_type: stop.otp_type || (stop.type === 'PICKUP' ? 'pickup' : 'delivery'),
           entity: stop.entity,
           reference: stop.reference || ''
@@ -387,7 +386,6 @@ export default function LogisticsOptimizerModule({ user }) {
         body: JSON.stringify({
           stop_id: otpModalStop.stop_id,
           otp: routeOtpInput.trim(),
-          expected_otp: otpModalStop.demo_otp || '',
           stop_type: otpModalStop.otp_type || (otpModalStop.type === 'PICKUP' ? 'pickup' : 'delivery'),
           entity: otpModalStop.entity,
           reference: otpModalStop.reference || ''
@@ -1399,42 +1397,35 @@ export default function LogisticsOptimizerModule({ user }) {
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 800, color: isPickup ? '#0369A1' : '#6D28D9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 800, color: isPickup ? '#0369A1' : '#6D28D9' }}>
                               <KeyRound size={15} />
                               {isPickup
-                                ? `Farmer Handover Verification — Collect PIN from ${stop.entity}`
-                                : `Buyer Delivery Verification — Collect PIN from ${stop.entity}`}
+                                ? `Farmer Farmgate PIN Verification`
+                                : `Buyer Doorstep Delivery PIN Verification`}
                             </div>
+                            <span
+                              style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                color: isPickup ? '#0369A1' : '#6D28D9',
+                                background: isPickup ? '#E0F2FE' : '#EDE9FE',
+                                padding: '3px 10px',
+                                borderRadius: '6px'
+                              }}
+                            >
+                              🔒 Two-Sided Cryptographic Security
+                            </span>
+                          </div>
 
-                            {/* 1-Click Demo OTP Autofill & Verify */}
-                            {stop.demo_otp && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setInlineOtpInputs((prev) => ({ ...prev, [stop.stop_id]: stop.demo_otp }));
-                                  handleSingleStopOtpVerify(stop, stop.demo_otp);
-                                }}
-                                title="Click to instantly fill and verify this stop's security OTP"
-                                style={{
-                                  background: isPickup ? '#E0F2FE' : '#EDE9FE',
-                                  border: `1.5px solid ${isPickup ? '#7DD3FC' : '#C4B5FD'}`,
-                                  color: isPickup ? '#0369A1' : '#6D28D9',
-                                  borderRadius: '6px',
-                                  padding: '4px 12px',
-                                  fontSize: '0.76rem',
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  boxShadow: 'var(--shadow-sm)',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                <span>💡 Demo PIN:</span>
-                                <strong style={{ fontFamily: 'monospace', letterSpacing: '1px', fontSize: '0.9rem' }}>{stop.demo_otp}</strong>
-                                <span style={{ fontSize: '0.72rem', textDecoration: 'underline' }}>(⚡ Autofill & Verify)</span>
-                              </button>
+                          <div style={{ fontSize: '0.76rem', color: isPickup ? '#075985' : '#5B21B6', lineHeight: 1.4 }}>
+                            {isPickup ? (
+                              <span>
+                                🌾 Collect the 4-digit Pickup PIN from farmer <strong>{stop.entity}</strong> (displayed on their Farmer Portal) upon loading produce:
+                              </span>
+                            ) : (
+                              <span>
+                                🛒 Collect the 4-digit Delivery PIN from customer <strong>{stop.entity}</strong> (displayed on their Order Tracking screen) upon delivery:
+                              </span>
                             )}
                           </div>
 
@@ -1590,26 +1581,7 @@ export default function LogisticsOptimizerModule({ user }) {
                     </div>
                   </div>
 
-                  {otpModalStop.demo_otp && (
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => setRouteOtpInput(otpModalStop.demo_otp)}
-                        style={{
-                          background: '#EFF6FF',
-                          border: '1px dashed #3B82F6',
-                          color: '#1D4ED8',
-                          borderRadius: '6px',
-                          padding: '4px 12px',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        💡 Autofill Demo PIN: <strong>{otpModalStop.demo_otp}</strong>
-                      </button>
-                    </div>
-                  )}
+
 
                   <div className="form-group">
                     <label className="form-label" style={{ fontWeight: 800 }}>
