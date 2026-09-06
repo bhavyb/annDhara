@@ -1,6 +1,6 @@
 import sqlite3, os
 
-db_path = 'backend/data/nexus.db'
+db_path = 'backend/data/anndhara.db'
 conn = sqlite3.connect(db_path)
 c = conn.cursor()
 
@@ -57,7 +57,7 @@ if guj_count == 0:
 
 c.execute("SELECT id, farmer_name, crop, asking_price_kg, location, state FROM listings")
 rows = c.fetchall()
-print(f"Total authentic listings in nexus.db: {len(rows)}")
+print(f"Total authentic listings in anndhara.db: {len(rows)}")
 for r in rows:
     print(" ", r)
 conn.close()
