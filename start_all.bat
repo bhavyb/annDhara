@@ -1,12 +1,12 @@
 @echo off
-title annDhana Launcher
+title AnnDhara Launcher
 echo ===================================================
-echo Launching annDhana Full-Stack Platform...
+echo Launching AnnDhara Full-Stack Platform...
 echo ===================================================
 
-start "annDhana Backend API (Port 5000)" cmd /k "%~dp0run_backend.bat"
+start "AnnDhara Backend API (Port 5000)" cmd /k "%~dp0run_backend.bat"
 timeout /t 2 /nobreak >nul
-start "annDhana Frontend (Port 5173)" cmd /k "%~dp0run_frontend.bat"
+start "AnnDhara Frontend (Port 5173)" cmd /k "%~dp0run_frontend.bat"
 
 echo.
 echo Both servers launched!

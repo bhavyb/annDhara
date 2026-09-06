@@ -203,7 +203,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
         setOrderError(data.error || 'Failed to create delivery order');
       }
     } catch (err) {
-      setOrderError('Cannot connect to annDhana logistics backend');
+      setOrderError('Cannot connect to AnnDhara logistics backend');
     } finally {
       setOrderSubmitting(false);
     }
@@ -467,7 +467,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
               {listings.map((l) => {
                 const cleanPhone = l.phone.replace(/[^0-9]/g, '');
                 const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                  `Namaste ${l.farmer_name}, I saw your ${l.crop} listing on annDhana.`
+                  `Namaste ${l.farmer_name}, I saw your ${l.crop} listing on AnnDhara.`
                 )}`;
                 const isPre = l.is_pre_harvest === 1;
 
@@ -774,7 +774,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                   ) : (
                     <a
                       href={`https://wa.me/${b.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                        `Namaste ${b.buyer_name}, I am a farmer on annDhana and I can fulfill your requirement of ${b.quantity_needed_kg} kg ${b.crop}.`
+                        `Namaste ${b.buyer_name}, I am a farmer on AnnDhara and I can fulfill your requirement of ${b.quantity_needed_kg} kg ${b.crop}.`
                       )}`}
                       target="_blank"
                       rel="noreferrer"
@@ -825,7 +825,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                 Apartment & College Area Aggregated Orders
               </h3>
               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                Instead of delivering separate 2kg bags, annDhana aggregates 50+ apartment families into 200kg bulk deliveries—slashing transport fees and securing 15-20% discounts.
+                Instead of delivering separate 2kg bags, AnnDhara aggregates 50+ apartment families into 200kg bulk deliveries—slashing transport fees and securing 15-20% discounts.
               </div>
             </div>
           </div>

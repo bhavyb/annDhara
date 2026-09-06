@@ -41,7 +41,7 @@ export default function ImpactDashboard() {
   const traditionalMargin = traditionalConsumer - traditionalFarmer;
   const traditionalFarmerSharePct = ((traditionalFarmer / Math.max(1, traditionalConsumer)) * 100).toFixed(1);
 
-  // In annDhara: Farmer gets +60% of intermediate margin, direct logistics costs ₹3.50/kg, platform fee ₹1.50/kg
+  // In AnnDhara: Farmer gets +60% of intermediate margin, direct logistics costs ₹3.50/kg, platform fee ₹1.50/kg
   const nexusFarmer = Math.round((traditionalFarmer + (traditionalMargin * 0.35)) * 10) / 10;
   const nexusLogistics = 3.5;
   const nexusFee = 1.5;
@@ -176,7 +176,7 @@ export default function ImpactDashboard() {
               Live Supply Chain Margin Simulator (Side-by-Side Breakdown)
             </h3>
             <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-              Adjust wholesale and consumer price levels to see how annDhara dynamically shifts value from middlemen back to farmers & consumers.
+              Adjust wholesale and consumer price levels to see how AnnDhara dynamically shifts value from middlemen back to farmers & consumers.
             </div>
           </div>
         </div>
@@ -292,7 +292,7 @@ export default function ImpactDashboard() {
             </div>
           </div>
 
-          {/* annDhara Platform Column */}
+          {/* AnnDhara Platform Column */}
           <div
             style={{
               background: '#FBFCFB',
@@ -302,7 +302,7 @@ export default function ImpactDashboard() {
             }}
           >
             <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--color-crop)', textTransform: 'uppercase', marginBottom: '10px' }}>
-              annDhara Demand-to-Delivery Platform
+              AnnDhara Demand-to-Delivery Platform
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.82rem' }}>
@@ -316,7 +316,7 @@ export default function ImpactDashboard() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
-              <span>annDhara Platform Fair Clearing Fee:</span>
+              <span>AnnDhara Platform Fair Clearing Fee:</span>
               <span>+₹{nexusFee.toFixed(2)}/kg</span>
             </div>
 

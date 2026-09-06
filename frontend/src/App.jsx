@@ -45,7 +45,7 @@ function AppContent() {
   const [user, setUser] = useState(() => {
     try {
       return (
-        JSON.parse(localStorage.getItem('anndhana_user')) ||
+        JSON.parse(localStorage.getItem('anndhara_user')) || JSON.parse(localStorage.getItem('anndhana_user')) ||
         JSON.parse(localStorage.getItem('nexus_user')) ||
         null
       );
@@ -91,7 +91,7 @@ function AppContent() {
     } catch (err) {
       console.error('Error connecting to backend:', err);
       setBackendError(
-        'Cannot connect to the annDhana backend server. Please verify Flask is running on port 5000.'
+        'Cannot connect to the AnnDhara backend server. Please verify Flask is running on port 5000.'
       );
     } finally {
       setLoadingInitial(false);
@@ -155,6 +155,7 @@ function AppContent() {
   ].filter((tool) => user?.role === 'farmer' ? tool.id !== 'markup-anomaly' : user?.role === 'customer' ? tool.id === 'markup-anomaly' : false);
 
   const handleAuthenticated = (authenticatedUser) => {
+    localStorage.setItem('anndhara_user', JSON.stringify(authenticatedUser));
     localStorage.setItem('anndhana_user', JSON.stringify(authenticatedUser));
     localStorage.setItem('nexus_user', JSON.stringify(authenticatedUser));
     setUser(authenticatedUser);
@@ -162,6 +163,7 @@ function AppContent() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('anndhara_user');
     localStorage.removeItem('anndhana_user');
     localStorage.removeItem('nexus_user');
     setUser(null);
@@ -195,7 +197,7 @@ function AppContent() {
         {/* Primary Tab Navigation */}
         <nav
           className="module-tabs"
-          aria-label="annDhana Core Modules"
+          aria-label="AnnDhara Core Modules"
         >
           {primaryTabs.map((tab) => (
             <button
@@ -350,7 +352,7 @@ function AppContent() {
           }}
         >
           <div>
-            <strong>{t('brandTitle', 'annDhana')}</strong> • {t('footerNetwork')}
+            <strong>{t('brandTitle', 'AnnDhara')}</strong> • {t('footerNetwork')}
           </div>
           <div>{t('footerSub')}</div>
         </footer>

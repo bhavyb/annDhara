@@ -34,6 +34,30 @@ import {
 } from 'lucide-react';
 import DeliveryStatusPanel from './DeliveryStatusPanel.jsx';
 
+const PRESET_FARMER_CARDS = [
+  {
+    name: 'Farmer A',
+    title: 'Farmer A (Sanand)',
+    location: 'Sanand Rural',
+    crop: 'Tomato (300 kg)',
+    customers: 'Grand Fortune Restaurant, FreshMart'
+  },
+  {
+    name: 'Farmer C',
+    title: 'Farmer C (Bavla)',
+    location: 'Bavla Agri Belt',
+    crop: 'Potato (400 kg)',
+    customers: 'Grand Fortune Restaurant, FreshMart'
+  },
+  {
+    name: 'Farmer B',
+    title: 'Farmer B (Dholka)',
+    location: 'Dholka Rural',
+    crop: 'Onion (250 kg)',
+    customers: 'Grand Fortune Restaurant, FreshMart'
+  }
+];
+
 export default function LogisticsOptimizerModule({ user }) {
   const [activeSubTab, setActiveSubTab] = useState('live-orders'); // 'live-orders', 'route-opt', 'matching', 'fleet'
 
@@ -51,6 +75,8 @@ export default function LogisticsOptimizerModule({ user }) {
   // Dynamic Route Selection State
   const [routeMode, setRouteMode] = useState('live-db'); // 'live-db' or 'preset'
   const [selectedRouteOrderRefs, setSelectedRouteOrderRefs] = useState([]);
+  const [selectedFarmerNames, setSelectedFarmerNames] = useState([]);
+  const [presetSelectedFarmers, setPresetSelectedFarmers] = useState(['Farmer A', 'Farmer C', 'Farmer B']);
 
   // Dynamic Matching & Live Deliveries State
   const [liveDeliveries, setLiveDeliveries] = useState([]);
@@ -58,6 +84,36 @@ export default function LogisticsOptimizerModule({ user }) {
   const [dynamicCandidates, setDynamicCandidates] = useState([]);
   const [loadingDynamic, setLoadingDynamic] = useState(false);
   const [assignMessage, setAssignMessage] = useState('');
+
+  // Group active orders by unique farmer for multi-farmer pickup routing
+  const farmersWithOrders = React.useMemo(() => {
+    const map = new Map();
+    (liveDeliveries || []).forEach((d) => {
+      const fName = d.farmer_name || 'Farmer';
+      if (!map.has(fName)) {
+        map.set(fName, {
+          farmer_name: fName,
+          pickup_location: d.pickup_location || 'Farmgate',
+          orders: [],
+          total_kg: 0,
+          crops: new Set(),
+          buyers: new Set(),
+          references: []
+        });
+      }
+      const entry = map.get(fName);
+      entry.orders.push(d);
+      entry.total_kg += Number(d.quantity_kg || 0);
+      if (d.crop) entry.crops.add(d.crop);
+      if (d.buyer_name) entry.buyers.add(d.buyer_name);
+      entry.references.push(d.reference);
+    });
+    return Array.from(map.values()).map((f) => ({
+      ...f,
+      crop_list: Array.from(f.crops).join(', '),
+      buyer_list: Array.from(f.buyers).join(', ')
+    }));
+  }, [liveDeliveries]);
 
   // Fleet state
   const [fleetList, setFleetList] = useState([]);
@@ -89,6 +145,13 @@ export default function LogisticsOptimizerModule({ user }) {
           setLiveDeliveries(valid);
           if (valid.length > 0) {
             setSelectedOrderRef((prev) => prev && valid.some((v) => v.reference === prev) ? prev : valid[0].reference);
+            const uniqueFarmers = Array.from(new Set(valid.map((v) => v.farmer_name).filter(Boolean)));
+            setSelectedFarmerNames((prev) => {
+              if (prev.length > 0 && prev.some((fn) => uniqueFarmers.includes(fn))) {
+                return prev;
+              }
+              return uniqueFarmers.slice(0, 2);
+            });
             setSelectedRouteOrderRefs((prev) => {
               if (prev.length > 0 && prev.some((r) => valid.some((v) => v.reference === r))) {
                 return prev;
@@ -97,6 +160,7 @@ export default function LogisticsOptimizerModule({ user }) {
             });
           } else {
             setSelectedOrderRef('');
+            setSelectedFarmerNames([]);
             setDynamicCandidates([]);
           }
         }
@@ -166,10 +230,16 @@ export default function LogisticsOptimizerModule({ user }) {
   }, [activeSubTab, selectedOrderRef]);
 
   // Fetch multi-stop route optimization
-  const fetchRouteOptimization = (orderRefs = null, explicitMode = null) => {
+  const fetchRouteOptimization = (farmerList = null, explicitMode = null, orderRefs = null) => {
     setLoadingRoute(true);
-    const activeMode = explicitMode || (orderRefs && orderRefs.length > 0 ? 'live' : (routeMode === 'preset' ? 'preset' : 'live'));
-    const body = { vehicle_capacity_kg: 1000, cost_per_km: 24, mode: activeMode };
+    const activeMode = explicitMode || (routeMode === 'preset' ? 'preset' : 'live');
+    const targetFarmers = farmerList !== null ? farmerList : (activeMode === 'preset' ? presetSelectedFarmers : selectedFarmerNames);
+    const body = {
+      vehicle_capacity_kg: 1000,
+      cost_per_km: 24,
+      mode: activeMode,
+      selected_farmers: targetFarmers
+    };
     if (orderRefs && orderRefs.length > 0) {
       body.order_references = orderRefs;
     }
@@ -197,10 +267,26 @@ export default function LogisticsOptimizerModule({ user }) {
       .finally(() => setLoadingRoute(false));
   };
 
+  const toggleFarmerSelection = (farmerName) => {
+    setSelectedFarmerNames((prev) => {
+      const next = prev.includes(farmerName) ? prev.filter((f) => f !== farmerName) : [...prev, farmerName];
+      fetchRouteOptimization(next, 'live');
+      return next;
+    });
+  };
+
+  const togglePresetFarmerSelection = (farmerName) => {
+    setPresetSelectedFarmers((prev) => {
+      const next = prev.includes(farmerName) ? prev.filter((f) => f !== farmerName) : [...prev, farmerName];
+      fetchRouteOptimization(next, 'preset');
+      return next;
+    });
+  };
+
   const toggleOrderSelection = (ref) => {
     setSelectedRouteOrderRefs((prev) => {
       const next = prev.includes(ref) ? prev.filter((r) => r !== ref) : [...prev, ref];
-      fetchRouteOptimization(next.length > 0 ? next : null, 'live');
+      fetchRouteOptimization(null, 'live', next.length > 0 ? next : null);
       return next;
     });
   };
@@ -271,16 +357,16 @@ export default function LogisticsOptimizerModule({ user }) {
       setRouteOtpError('');
       setRouteOtpSuccess('');
     } else {
-      fetchRouteOptimization(routeMode === 'live-db' ? selectedRouteOrderRefs : null);
+      fetchRouteOptimization(routeMode === 'preset' ? presetSelectedFarmers : selectedFarmerNames);
     }
   };
 
   useEffect(() => {
     if (activeSubTab === 'route-opt') {
-      if (routeMode === 'live-db' && selectedRouteOrderRefs.length > 0) {
-        fetchRouteOptimization(selectedRouteOrderRefs);
-      } else if (!routeData) {
-        fetchRouteOptimization(null);
+      if (routeMode === 'live-db') {
+        fetchRouteOptimization(selectedFarmerNames, 'live');
+      } else {
+        fetchRouteOptimization(presetSelectedFarmers, 'preset');
       }
     }
   }, [activeSubTab, routeMode]);
@@ -533,14 +619,14 @@ export default function LogisticsOptimizerModule({ user }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--color-soil-dark)', textTransform: 'uppercase' }}>
-                  📦 Route Order Source:
+                  📦 Route Optimization Mode:
                 </span>
                 <div style={{ display: 'inline-flex', background: 'var(--color-bg-subtle)', padding: '3px', borderRadius: '8px', gap: '4px' }}>
                   <button
                     type="button"
                     onClick={() => {
                       setRouteMode('live-db');
-                      fetchRouteOptimization(selectedRouteOrderRefs, 'live');
+                      fetchRouteOptimization(selectedFarmerNames, 'live');
                     }}
                     style={{
                       padding: '6px 14px',
@@ -557,13 +643,13 @@ export default function LogisticsOptimizerModule({ user }) {
                       gap: '5px'
                     }}
                   >
-                    ⚡ Dynamic Live Database Orders ({liveDeliveries.length})
+                    ⚡ Dynamic Live Farmers ({farmersWithOrders.length} Available)
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setRouteMode('preset');
-                      fetchRouteOptimization(null, 'preset');
+                      fetchRouteOptimization(presetSelectedFarmers, 'preset');
                     }}
                     style={{
                       padding: '6px 14px',
@@ -586,72 +672,89 @@ export default function LogisticsOptimizerModule({ user }) {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {routeMode === 'live-db' && (
+                {routeMode === 'live-db' ? (
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={() => fetchRouteOptimization(selectedRouteOrderRefs)}
-                    disabled={selectedRouteOrderRefs.length < 1 || loadingRoute}
+                    onClick={() => fetchRouteOptimization(selectedFarmerNames, 'live')}
+                    disabled={selectedFarmerNames.length < 1 || loadingRoute}
                     style={{ fontSize: '0.78rem', padding: '6px 14px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
                     <RefreshCw size={13} className={loadingRoute ? 'spin-icon' : ''} />
-                    {loadingRoute ? 'Calculating Route...' : `Optimize Selected (${selectedRouteOrderRefs.length})`}
+                    {loadingRoute ? 'Calculating Route...' : `Optimize Route (${selectedFarmerNames.length} Farmers Selected)`}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => fetchRouteOptimization(presetSelectedFarmers, 'preset')}
+                    disabled={presetSelectedFarmers.length < 1 || loadingRoute}
+                    style={{ fontSize: '0.78rem', padding: '6px 14px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', background: '#7C3AED', borderColor: '#7C3AED' }}
+                  >
+                    <RefreshCw size={13} className={loadingRoute ? 'spin-icon' : ''} />
+                    {loadingRoute ? 'Calculating Route...' : `Optimize Preset (${presetSelectedFarmers.length} Farmers)`}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* If in live-db mode, display order selector checklist */}
+            {/* LIVE-DB MODE: FARMER PICKUP SELECTION */}
             {routeMode === 'live-db' && (
-              <div style={{ background: 'var(--color-bg-subtle)', padding: '12px 14px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-soil-dark)', textTransform: 'uppercase' }}>
-                    Select 2 or More Real Orders to Combine into AI Multi-Stop Run:
-                  </span>
+              <div style={{ background: 'var(--color-bg-subtle)', padding: '14px 16px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--color-soil-dark)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🚜 Select 2 or More Farmers for Farmgate Pickup:
+                    </span>
+                    <div style={{ fontSize: '0.73rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
+                      ✓ Customer Doorstep Delivery stops will strictly show ONLY the customers who ordered from these selected farmers.
+                    </div>
+                  </div>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button
                       type="button"
                       onClick={() => {
-                        const allRefs = liveDeliveries.map((d) => d.reference);
-                        setSelectedRouteOrderRefs(allRefs);
-                        fetchRouteOptimization(allRefs);
+                        const allF = farmersWithOrders.map((f) => f.farmer_name);
+                        setSelectedFarmerNames(allF);
+                        fetchRouteOptimization(allF, 'live');
                       }}
-                      style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                      style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
                     >
-                      Select All ({liveDeliveries.length})
+                      Select All ({farmersWithOrders.length})
                     </button>
                     <span style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem' }}>•</span>
                     <button
                       type="button"
                       onClick={() => {
-                        const topTwo = liveDeliveries.slice(0, 2).map((d) => d.reference);
-                        setSelectedRouteOrderRefs(topTwo);
-                        fetchRouteOptimization(topTwo);
+                        const topTwo = farmersWithOrders.slice(0, 2).map((f) => f.farmer_name);
+                        setSelectedFarmerNames(topTwo);
+                        fetchRouteOptimization(topTwo, 'live');
                       }}
-                      style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                      style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
                     >
-                      Select Top 2
+                      Select Top 2 Farmers
                     </button>
                   </div>
                 </div>
 
-                {liveDeliveries.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
-                    {liveDeliveries.map((order) => {
-                      const isChecked = selectedRouteOrderRefs.includes(order.reference);
+                {farmersWithOrders.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '10px' }}>
+                    {farmersWithOrders.map((farmer) => {
+                      const isChecked = selectedFarmerNames.includes(farmer.farmer_name);
                       return (
                         <div
-                          key={order.reference}
-                          onClick={() => toggleOrderSelection(order.reference)}
+                          key={farmer.farmer_name}
+                          onClick={() => toggleFarmerSelection(farmer.farmer_name)}
                           style={{
                             background: isChecked ? '#ECFDF5' : 'white',
                             border: `1.5px solid ${isChecked ? '#059669' : 'var(--color-border)'}`,
-                            borderRadius: '6px',
-                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            padding: '12px 14px',
                             cursor: 'pointer',
                             display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                            boxShadow: isChecked ? '0 2px 8px rgba(5,150,105,0.12)' : 'var(--shadow-sm)',
                             transition: 'all 0.15s ease'
                           }}
                         >
@@ -659,19 +762,24 @@ export default function LogisticsOptimizerModule({ user }) {
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => {}}
-                            style={{ accentColor: '#059669', cursor: 'pointer', width: '16px', height: '16px' }}
+                            style={{ accentColor: '#059669', cursor: 'pointer', width: '18px', height: '18px', marginTop: '2px' }}
                           />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-soil-dark)' }}>
-                                {order.crop} ({order.quantity_kg} kg)
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-soil-dark)' }}>
+                                🌾 {farmer.farmer_name}
                               </span>
-                              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#059669', background: '#E8F5E9', padding: '1px 5px', borderRadius: '4px' }}>
-                                {order.status}
+                              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#059669', background: '#E8F5E9', padding: '2px 7px', borderRadius: '12px' }}>
+                                {farmer.total_kg} kg cargo
                               </span>
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
-                              🌾 {order.farmer_name} ({order.pickup_location}) ➔ 🛒 {order.buyer_name} ({order.destination})
+
+                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '3px' }}>
+                              📍 <strong>Pickup:</strong> {farmer.pickup_location} • <em>{farmer.crop_list}</em>
+                            </div>
+
+                            <div style={{ fontSize: '0.73rem', color: '#1E40AF', background: '#EFF6FF', padding: '4px 8px', borderRadius: '6px', marginTop: '6px', lineHeight: 1.3 }}>
+                              🛒 <strong>Customers with Orders:</strong> {farmer.buyer_list || 'Direct Buyers'}
                             </div>
                           </div>
                         </div>
@@ -680,9 +788,105 @@ export default function LogisticsOptimizerModule({ user }) {
                   </div>
                 ) : (
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', padding: '6px 0' }}>
-                    No active live orders in queue.
+                    No active farmers with pending orders in the live queue.
                   </div>
                 )}
+
+                {selectedFarmerNames.length < 2 && (
+                  <div style={{ fontSize: '0.74rem', color: '#D97706', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <AlertTriangle size={13} /> Please select 2 or more farmers to pool a multi-farmgate pickup and consolidated customer doorstep route.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PRESET MODE: CORRIDOR FARMER SELECTION */}
+            {routeMode === 'preset' && (
+              <div style={{ background: 'var(--color-bg-subtle)', padding: '14px 16px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#7C3AED', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🚜 Preset 3-Farm Corridor Pickup Selection:
+                    </span>
+                    <div style={{ fontSize: '0.73rem', color: '#6D28D9', fontWeight: 600, marginTop: '2px' }}>
+                      ✓ Doorstep customer drops will strictly route to buyers receiving harvest from your selected farmers.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allP = PRESET_FARMER_CARDS.map((f) => f.name);
+                        setPresetSelectedFarmers(allP);
+                        fetchRouteOptimization(allP, 'preset');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#7C3AED', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Select All (3)
+                    </button>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem' }}>•</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const two = ['Farmer A', 'Farmer C'];
+                        setPresetSelectedFarmers(two);
+                        fetchRouteOptimization(two, 'preset');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Select 2 Farmers (A & C)
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                  {PRESET_FARMER_CARDS.map((farmer) => {
+                    const isChecked = presetSelectedFarmers.includes(farmer.name);
+                    return (
+                      <div
+                        key={farmer.name}
+                        onClick={() => togglePresetFarmerSelection(farmer.name)}
+                        style={{
+                          background: isChecked ? '#F5F3FF' : 'white',
+                          border: `1.5px solid ${isChecked ? '#7C3AED' : 'var(--color-border)'}`,
+                          borderRadius: '8px',
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '12px',
+                          boxShadow: isChecked ? '0 2px 8px rgba(124,58,237,0.12)' : 'var(--shadow-sm)',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          style={{ accentColor: '#7C3AED', cursor: 'pointer', width: '18px', height: '18px', marginTop: '2px' }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-soil-dark)' }}>
+                              🌾 {farmer.title}
+                            </span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#7C3AED', background: '#EDE9FE', padding: '2px 7px', borderRadius: '12px' }}>
+                              {farmer.crop}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '3px' }}>
+                            📍 <strong>Location:</strong> {farmer.location}
+                          </div>
+
+                          <div style={{ fontSize: '0.73rem', color: '#4338CA', background: '#EEF2FF', padding: '4px 8px', borderRadius: '6px', marginTop: '6px', lineHeight: 1.3 }}>
+                            🛒 <strong>Destination Customers:</strong> {farmer.customers}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -881,6 +1085,18 @@ export default function LogisticsOptimizerModule({ user }) {
                         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: isVerified ? '#047857' : 'var(--color-soil-dark)', marginTop: '4px' }}>
                           {stop.action}
                         </div>
+
+                        {isPickup && stop.target_customers && (
+                          <div style={{ fontSize: '0.74rem', color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '3px 8px', borderRadius: '6px', marginTop: '4px', display: 'inline-block' }}>
+                            🛒 <strong>Target Doorstep Customers:</strong> {stop.target_customers}
+                          </div>
+                        )}
+
+                        {isDelivery && stop.from_farmer && (
+                          <div style={{ fontSize: '0.74rem', color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '6px', marginTop: '4px', display: 'inline-block' }}>
+                            🌾 <strong>Harvest Source:</strong> Ordered exclusively from <strong>{stop.from_farmer}</strong>
+                          </div>
+                        )}
 
                         <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
                           📦 Cargo onboard: {stop.cargo_breakdown}

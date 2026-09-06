@@ -153,7 +153,7 @@ export default function TraceabilityModal({ listing, onClose }) {
                   }}
                 >
                   <QrCode size={36} color="white" />
-                  annDhana
+                  AnnDhara
                 </div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginTop: '4px', fontWeight: 600 }}>
                   SCAN TO VERIFY

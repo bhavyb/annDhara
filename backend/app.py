@@ -320,7 +320,7 @@ def api_status():
     status = get_cache_status()
     return jsonify({
         "success": True,
-        "app": "annDhana AI Agricultural Intelligence Platform",
+        "app": "AnnDhara AI Agricultural Intelligence Platform",
         "version": "2.0-DemandToDelivery",
         "data": status
     })
@@ -885,91 +885,135 @@ def api_route_optimize():
     pickups = payload.get("pickups")
     deliveries = payload.get("deliveries")
     order_references = payload.get("order_references") or []
+    selected_farmers = payload.get("selected_farmers") or []
     mode = payload.get("mode", "live")
 
     try:
         from mandi_comparator import resolve_coordinates
 
-        # Dynamic Route Generation from Live Database Orders
-        # If not explicitly specified and not in preset mode, auto-load active non-delivered orders from database
-        if mode != "preset" and not order_references and not pickups:
+        rows = []
+        # 1. If explicit farmers are selected for pickup, fetch ALL orders belonging to those farmers
+        if selected_farmers and len(selected_farmers) >= 1:
             with get_db_connection() as conn:
-                active_rows = conn.execute(
-                    """SELECT reference FROM delivery_updates 
-                       WHERE (farmer_name NOT LIKE '%test%' OR farmer_name IS NULL)
-                         AND (buyer_name NOT LIKE '%test%' OR buyer_name IS NULL)
-                         AND reference != 'ADH-1001'
-                         AND status != 'Delivered'
-                       ORDER BY id DESC LIMIT 4"""
+                placeholders = ",".join(["?"] * len(selected_farmers))
+                rows = conn.execute(
+                    f"""SELECT * FROM delivery_updates 
+                        WHERE farmer_name IN ({placeholders})
+                          AND status != 'Delivered'
+                        ORDER BY id DESC""",
+                    selected_farmers
                 ).fetchall()
-                if len(active_rows) >= 2:
-                    order_references = [r["reference"] for r in active_rows]
-
-        if order_references and len(order_references) >= 1:
+        # 2. Or if explicit order references were provided
+        elif order_references and len(order_references) >= 1:
             with get_db_connection() as conn:
                 placeholders = ",".join(["?"] * len(order_references))
                 rows = conn.execute(
                     f"SELECT * FROM delivery_updates WHERE reference IN ({placeholders})",
                     order_references
                 ).fetchall()
+        # 3. Otherwise, if in live mode, auto-select orders from top 2 distinct farmers
+        elif mode != "preset" and not pickups:
+            with get_db_connection() as conn:
+                distinct_farmers = conn.execute(
+                    """SELECT DISTINCT farmer_name FROM delivery_updates 
+                       WHERE (farmer_name NOT LIKE '%test%' OR farmer_name IS NULL)
+                         AND (buyer_name NOT LIKE '%test%' OR buyer_name IS NULL)
+                         AND reference != 'ADH-1001'
+                         AND status != 'Delivered'
+                       ORDER BY id DESC LIMIT 2"""
+                ).fetchall()
+                if distinct_farmers:
+                    f_names = [r["farmer_name"] for r in distinct_farmers]
+                    placeholders = ",".join(["?"] * len(f_names))
+                    rows = conn.execute(
+                        f"""SELECT * FROM delivery_updates 
+                            WHERE farmer_name IN ({placeholders}) 
+                              AND status != 'Delivered'
+                            ORDER BY id DESC""",
+                        f_names
+                    ).fetchall()
 
-            if rows:
-                dyn_pickups = []
-                dyn_deliveries = []
-                for idx, r in enumerate(rows):
-                    p_loc = r["pickup_location"] or "Sanand, Ahmedabad"
-                    d_loc = r["destination"] or "SG Highway, Ahmedabad"
-                    p_lat, p_lng, _ = resolve_coordinates(None, None, p_loc)
-                    d_lat, d_lng, _ = resolve_coordinates(None, None, d_loc)
-                    p_lat += (idx * 0.012)
-                    p_lng += (idx * 0.009)
-                    d_lat += (idx * 0.015)
-                    d_lng += (idx * 0.011)
+        if rows:
+            # Group orders by farmer for consolidated farmgate pickups
+            farmer_order_map = {}
+            for r in rows:
+                fn = r["farmer_name"] or "Farmer"
+                if fn not in farmer_order_map:
+                    farmer_order_map[fn] = []
+                farmer_order_map[fn].append(r)
 
-                    crop_name = r["crop"] or "Produce"
-                    qty = float(r["quantity_kg"] or 100.0)
-                    is_perish = crop_name.lower() in ("tomato", "banana", "green chilli", "vegetable")
+            dyn_pickups = []
+            p_idx = 0
+            for f_name, f_rows in farmer_order_map.items():
+                first_r = f_rows[0]
+                p_loc = first_r["pickup_location"] or "Sanand, Ahmedabad"
+                p_lat, p_lng, _ = resolve_coordinates(None, None, p_loc)
+                p_lat += (p_idx * 0.012)
+                p_lng += (p_idx * 0.009)
 
-                    dyn_pickups.append({
-                        "id": f"F_{r['reference']}",
-                        "name": r["farmer_name"] or f"Farmer #{idx+1}",
-                        "farmer_title": f"{r['farmer_name']} ({p_loc})",
-                        "location": p_loc,
-                        "lat": p_lat,
-                        "lng": p_lng,
-                        "load_kg": qty,
-                        "crop": crop_name,
-                        "perishable": is_perish,
-                        "priority": "High (Perishable)" if is_perish else "Normal",
-                        "status": "Ready for Pickup",
-                        "phone": f"+91 9825{idx+1} 1120{idx+1}",
-                        "otp": str(r["pickup_otp"] or (4100 + idx * 231)),
-                        "reference": r["reference"]
-                    })
+                tot_kg = sum(float(r["quantity_kg"] or 0.0) for r in f_rows)
+                crops_list = list(dict.fromkeys(r["crop"] or "Produce" for r in f_rows))
+                crop_str = ", ".join(crops_list)
+                is_perish = any(c.lower() in ("tomato", "banana", "green chilli", "vegetable") for c in crops_list)
+                buyer_names = list(dict.fromkeys(r["buyer_name"] or "Buyer" for r in f_rows))
+                buyer_str = ", ".join(buyer_names)
 
-                    dyn_deliveries.append({
-                        "id": f"B_{r['reference']}",
-                        "name": r["buyer_name"] or f"Buyer #{idx+1}",
-                        "buyer_type": "Retail / Wholesale Buyer",
-                        "location": d_loc,
-                        "lat": d_lat,
-                        "lng": d_lng,
-                        "drop_kg": qty,
-                        "items": {crop_name: qty},
-                        "deadline": f"0{10+idx}:30 AM",
-                        "phone": f"+91 9825{idx+1} 4450{idx+1}",
-                        "otp": str(r["delivery_otp"] or (5100 + idx * 319)),
-                        "reference": r["reference"]
-                    })
+                dyn_pickups.append({
+                    "id": f"F_{first_r['reference']}",
+                    "name": f_name,
+                    "farmer_title": f"{f_name} ({p_loc})",
+                    "location": p_loc,
+                    "lat": p_lat,
+                    "lng": p_lng,
+                    "load_kg": tot_kg,
+                    "crop": crop_str,
+                    "perishable": is_perish,
+                    "priority": "High (Perishable)" if is_perish else "Normal",
+                    "status": "Ready for Pickup",
+                    "phone": f"+91 9825{p_idx+1} 1120{p_idx+1}",
+                    "otp": str(first_r["pickup_otp"] or (4100 + p_idx * 231)),
+                    "reference": first_r["reference"],
+                    "all_references": [r["reference"] for r in f_rows],
+                    "target_customers": buyer_str
+                })
+                p_idx += 1
 
-                pickups = dyn_pickups
-                deliveries = dyn_deliveries
+            # Deliveries: Exclusively the customers who ordered from the selected farmers
+            dyn_deliveries = []
+            for d_idx, r in enumerate(rows):
+                d_loc = r["destination"] or "SG Highway, Ahmedabad"
+                d_lat, d_lng, _ = resolve_coordinates(None, None, d_loc)
+                d_lat += (d_idx * 0.015)
+                d_lng += (d_idx * 0.011)
+
+                crop_name = r["crop"] or "Produce"
+                qty = float(r["quantity_kg"] or 100.0)
+
+                dyn_deliveries.append({
+                    "id": f"B_{r['reference']}",
+                    "name": r["buyer_name"] or f"Buyer #{d_idx+1}",
+                    "buyer_type": "Customer Doorstep Delivery",
+                    "location": d_loc,
+                    "lat": d_lat,
+                    "lng": d_lng,
+                    "drop_kg": qty,
+                    "items": {crop_name: qty},
+                    "from_farmer": r["farmer_name"] or "Selected Farmer",
+                    "deadline": f"0{10+d_idx}:30 AM",
+                    "phone": f"+91 9825{d_idx+1} 4450{d_idx+1}",
+                    "otp": str(r["delivery_otp"] or (5100 + d_idx * 319)),
+                    "reference": r["reference"]
+                })
+
+            pickups = dyn_pickups
+            deliveries = dyn_deliveries
 
         route_data = optimize_shared_logistics_route(
             pickups=pickups,
             deliveries=deliveries,
             vehicle_capacity_kg=vehicle_cap,
-            cost_per_km=cost_km
+            cost_per_km=cost_km,
+            selected_farmers=selected_farmers
         )
 
         # Ensure OTPs are never exposed or sent to logistics dashboard
@@ -1357,7 +1401,7 @@ def serve_frontend(path):
     if os.path.exists(os.path.join(DIST_DIR, "index.html")):
         return send_from_directory(DIST_DIR, "index.html")
     return jsonify({
-        "name": "annDhana Agricultural Platform API",
+        "name": "AnnDhara Agricultural Platform API",
         "status": "online",
         "message": "Frontend build not found. Run 'npm run build' inside frontend/"
     })
@@ -1365,5 +1409,5 @@ def serve_frontend(path):
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    print(f"Starting annDhana Farm-to-Market Intelligence Server on http://localhost:{port}")
+    print(f"Starting AnnDhara Farm-to-Market Intelligence Server on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port, debug=True)

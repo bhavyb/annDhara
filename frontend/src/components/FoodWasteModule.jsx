@@ -251,7 +251,7 @@ export default function FoodWasteModule() {
       {/* Sustainable Impact Principles */}
       <div className="nexus-card">
         <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-soil-dark)', marginBottom: '12px' }}>
-          annDhana 3-Tier Perishable Waste Mitigation Hierarchy
+          AnnDhara 3-Tier Perishable Waste Mitigation Hierarchy
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
           <div style={{ background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>

@@ -348,7 +348,7 @@ export default function SystemOverview({ onNavigate }) {
             }}
           >
             <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-soil-dark)', marginBottom: '8px' }}>
-              🌐 ANNDHANA DIGITAL INTELLIGENCE MARKETPLACE
+              🌐 ANNDHARA DIGITAL INTELLIGENCE MARKETPLACE
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', maxWidth: '640px', margin: '0 auto' }}>
               Connects verified farmgate supply with institutional bulk demands and aggregated community society orders.

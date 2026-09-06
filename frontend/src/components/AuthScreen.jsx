@@ -34,7 +34,7 @@ export default function AuthScreen({ onAuthenticated }) {
       }
       onAuthenticated(data.user);
     } catch (err) {
-      setError(err.message || 'Could not connect to annDhara');
+      setError(err.message || 'Could not connect to AnnDhara');
     } finally {
       setSubmitting(false);
     }

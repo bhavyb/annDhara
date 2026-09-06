@@ -151,7 +151,7 @@ export function getCropDisplayName(cropName, explicitLang) {
   const lang =
     explicitLang ||
     (typeof window !== 'undefined'
-      ? localStorage.getItem('anndhana_lang') || localStorage.getItem('anndhana_language')
+      ? localStorage.getItem('anndhara_lang') || localStorage.getItem('anndhana_lang') || localStorage.getItem('anndhana_language')
       : null) ||
     'en';
 

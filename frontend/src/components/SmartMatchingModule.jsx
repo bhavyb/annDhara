@@ -452,7 +452,7 @@ export default function SmartMatchingModule({
 
                   <a
                     href={`https://wa.me/${(bestFarmerResult.best_match.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                      `Namaste ${bestFarmerResult.best_match.farmer_name}, I saw your ${bestFarmerResult.best_match.crop} listing on annDhana and would like to order ${buyerQty} kg.`
+                      `Namaste ${bestFarmerResult.best_match.farmer_name}, I saw your ${bestFarmerResult.best_match.crop} listing on AnnDhara and would like to order ${buyerQty} kg.`
                     )}`}
                     target="_blank"
                     rel="noreferrer"
@@ -566,7 +566,7 @@ export default function SmartMatchingModule({
                 Smart Harvest-to-Buyer Multi-Allocation
               </h2>
               <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                Instead of waiting passively for a buyer, annDhana AI instantly splits harvest lots across hotels, restaurants, supermarkets, and community pools.
+                Instead of waiting passively for a buyer, AnnDhara AI instantly splits harvest lots across hotels, restaurants, supermarkets, and community pools.
               </div>
             </div>
 

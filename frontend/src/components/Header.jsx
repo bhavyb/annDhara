@@ -76,7 +76,7 @@ export default function Header({ statusData, onRefreshSuccess, user, onLogout })
             </div>
             <div>
               <div className="brand-title">
-                {t('brandTitle', 'annDhana')}
+                {t('brandTitle', 'AnnDhara')}
               </div>
               <div className="brand-tagline">
                 {t('brandTagline')}

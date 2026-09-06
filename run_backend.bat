@@ -1,7 +1,7 @@
 @echo off
-title annDhana Flask Backend
+title AnnDhara Flask Backend
 echo ===================================================
-echo Starting annDhana Flask API on http://localhost:5000
+echo Starting AnnDhara Flask API on http://localhost:5000
 echo ===================================================
 
 cd /d "%~dp0backend"

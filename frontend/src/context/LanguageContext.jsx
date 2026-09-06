@@ -147,7 +147,7 @@ export const LANGUAGES = [
 
 export const translations = {
   "en": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -190,7 +190,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -219,11 +219,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "hi": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "भारतीय किसानों के लिए एआई बाज़ार बुद्धिमत्ता और उचित मूल्य खोज",
     "footerNetwork": "एआई-संचालित मांग-से-वितरण कृषि नेटवर्क",
     "footerSub": "पारदर्शी खेत-से-उपभोक्ता नेटवर्क",
@@ -266,7 +266,7 @@ export const translations = {
     "activeDispatches": "सक्रिय डिस्पैच",
     "onTimeRate": "समय पर डिलीवरी दर",
     "sharedFuelSavings": "साझा मार्ग ईंधन बचत",
-    "commandPortalsHeading": "annDhana प्लेटफॉर्म कमांड पोर्टल",
+    "commandPortalsHeading": "AnnDhara प्लेटफॉर्म कमांड पोर्टल",
     "commandPortalsSub": "रीयल-टाइम व्यापार संकेत, लाइव साझा रूट और खेत से सीधी आपूर्ति देखें",
     "directMarketTitle": "प्रत्यक्ष कृषि उपज बाज़ार",
     "directMarketDesc": "लाइव तस्वीरों, उचित मूल्य मानकों और फार्म-टू-फोर्क क्यूआर कोड के साथ 68+ सत्यापित किसानों की उपज देखें।",
@@ -295,11 +295,11 @@ export const translations = {
     "trackLiveDelivery": "लाइव डिलीवरी ट्रैक करें",
     "quickPostLocation": "लाइव चेकपॉइंट लोकेशन अपडेट करें:",
     "allCrops": "सभी फसलें",
-    "connectingMsg": "annDhana फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
+    "connectingMsg": "AnnDhara फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
     "connectingSub": "मांग मॉडल, क्षेत्रीय हीटमैप और मंडी डेटा फीड प्रारंभ किए जा रहे हैं"
   },
   "gu": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "ભારતીય ખેડૂતો માટે એઆઈ બજાર વિશ્લેષણ અને યોગ્ય ભાવ શોધ",
     "footerNetwork": "એઆઈ-સંચાલિત માંગ-થી-ડિલિવરી કૃષિ નેટવર્ક",
     "footerSub": "પારદર્શક ખેતર-થી-ગ્રાહક નેટવર્ક",
@@ -342,7 +342,7 @@ export const translations = {
     "activeDispatches": "સક્રિય ટ્રિપ્સ",
     "onTimeRate": "સમયસર ડિલિવરી દર",
     "sharedFuelSavings": "શેર્ડ રૂટ ઇંધણ બચત",
-    "commandPortalsHeading": "annDhana પ્લેટફોર્મ કમાન્ડ પોર્ટલ",
+    "commandPortalsHeading": "AnnDhara પ્લેટફોર્મ કમાન્ડ પોર્ટલ",
     "commandPortalsSub": "રિયલ-ટાઇમ વેપાર સંકેત, લાઈવ શેર્ડ રૂટ્સ અને ખેતરથી સીધો પુરવઠો જુઓ",
     "directMarketTitle": "સીધું ખેત ઉપજ બજાર",
     "directMarketDesc": "લાઈવ ફોટા, યોગ્ય ભાવ માપદંડ અને ખેતર-થી-થાલી ક્યૂઆર કોડ સાથે 68+ પ્રમાણિત ખેડૂતોની ઉપજ જુઓ.",
@@ -371,11 +371,11 @@ export const translations = {
     "trackLiveDelivery": "લાઈવ ડિલિવરી ટ્રેક કરો",
     "quickPostLocation": "લાઈવ ચેકપોઇન્ટ લોકેશન અપડેટ કરો:",
     "allCrops": "બધા પાક",
-    "connectingMsg": "annDhana ફાર્મ-ટુ-માર્કેટ નેટવર્ક સાથે કનેક્ટ થઈ રહ્યું છે...",
+    "connectingMsg": "AnnDhara ફાર્મ-ટુ-માર્કેટ નેટવર્ક સાથે કનેક્ટ થઈ રહ્યું છે...",
     "connectingSub": "માંગ મોડલ, પ્રાદેશિક હીટમેપ અને મંડી ડેટા શરૂ થઈ રહ્યા છે"
   },
   "mr": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -418,7 +418,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -447,11 +447,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "pa": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -494,7 +494,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -523,11 +523,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "bn": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -570,7 +570,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -599,11 +599,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "ta": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -646,7 +646,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -675,11 +675,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "te": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -722,7 +722,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -751,11 +751,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "kn": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -798,7 +798,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -827,11 +827,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "ml": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -874,7 +874,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -903,11 +903,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "or": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -950,7 +950,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -979,11 +979,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "as": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -1026,7 +1026,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -1055,11 +1055,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "ur": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -1102,7 +1102,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -1131,11 +1131,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "mai": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "भारतीय किसानों के लिए एआई बाज़ार बुद्धिमत्ता और उचित मूल्य खोज",
     "footerNetwork": "एआई-संचालित मांग-से-वितरण कृषि नेटवर्क",
     "footerSub": "पारदर्शी खेत-से-उपभोक्ता नेटवर्क",
@@ -1178,7 +1178,7 @@ export const translations = {
     "activeDispatches": "सक्रिय डिस्पैच",
     "onTimeRate": "समय पर डिलीवरी दर",
     "sharedFuelSavings": "साझा मार्ग ईंधन बचत",
-    "commandPortalsHeading": "annDhana प्लेटफॉर्म कमांड पोर्टल",
+    "commandPortalsHeading": "AnnDhara प्लेटफॉर्म कमांड पोर्टल",
     "commandPortalsSub": "रीयल-टाइम व्यापार संकेत, लाइव साझा रूट और खेत से सीधी आपूर्ति देखें",
     "directMarketTitle": "प्रत्यक्ष कृषि उपज बाज़ार",
     "directMarketDesc": "लाइव तस्वीरों, उचित मूल्य मानकों और फार्म-टू-फोर्क क्यूआर कोड के साथ 68+ सत्यापित किसानों की उपज देखें।",
@@ -1207,11 +1207,11 @@ export const translations = {
     "trackLiveDelivery": "लाइव डिलीवरी ट्रैक करें",
     "quickPostLocation": "लाइव चेकपॉइंट लोकेशन अपडेट करें:",
     "allCrops": "सभी फसलें",
-    "connectingMsg": "annDhana फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
+    "connectingMsg": "AnnDhara फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
     "connectingSub": "मांग मॉडल, क्षेत्रीय हीटमैप और मंडी डेटा फीड प्रारंभ किए जा रहे हैं"
   },
   "bho": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "भारतीय किसानों के लिए एआई बाज़ार बुद्धिमत्ता और उचित मूल्य खोज",
     "footerNetwork": "एआई-संचालित मांग-से-वितरण कृषि नेटवर्क",
     "footerSub": "पारदर्शी खेत-से-उपभोक्ता नेटवर्क",
@@ -1254,7 +1254,7 @@ export const translations = {
     "activeDispatches": "सक्रिय डिस्पैच",
     "onTimeRate": "समय पर डिलीवरी दर",
     "sharedFuelSavings": "साझा मार्ग ईंधन बचत",
-    "commandPortalsHeading": "annDhana प्लेटफॉर्म कमांड पोर्टल",
+    "commandPortalsHeading": "AnnDhara प्लेटफॉर्म कमांड पोर्टल",
     "commandPortalsSub": "रीयल-टाइम व्यापार संकेत, लाइव साझा रूट और खेत से सीधी आपूर्ति देखें",
     "directMarketTitle": "प्रत्यक्ष कृषि उपज बाज़ार",
     "directMarketDesc": "लाइव तस्वीरों, उचित मूल्य मानकों और फार्म-टू-फोर्क क्यूआर कोड के साथ 68+ सत्यापित किसानों की उपज देखें।",
@@ -1283,11 +1283,11 @@ export const translations = {
     "trackLiveDelivery": "लाइव डिलीवरी ट्रैक करें",
     "quickPostLocation": "लाइव चेकपॉइंट लोकेशन अपडेट करें:",
     "allCrops": "सभी फसलें",
-    "connectingMsg": "annDhana फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
+    "connectingMsg": "AnnDhara फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
     "connectingSub": "मांग मॉडल, क्षेत्रीय हीटमैप और मंडी डेटा फीड प्रारंभ किए जा रहे हैं"
   },
   "gom": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -1330,7 +1330,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -1359,11 +1359,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "doi": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "भारतीय किसानों के लिए एआई बाज़ार बुद्धिमत्ता और उचित मूल्य खोज",
     "footerNetwork": "एआई-संचालित मांग-से-वितरण कृषि नेटवर्क",
     "footerSub": "पारदर्शी खेत-से-उपभोक्ता नेटवर्क",
@@ -1406,7 +1406,7 @@ export const translations = {
     "activeDispatches": "सक्रिय डिस्पैच",
     "onTimeRate": "समय पर डिलीवरी दर",
     "sharedFuelSavings": "साझा मार्ग ईंधन बचत",
-    "commandPortalsHeading": "annDhana प्लेटफॉर्म कमांड पोर्टल",
+    "commandPortalsHeading": "AnnDhara प्लेटफॉर्म कमांड पोर्टल",
     "commandPortalsSub": "रीयल-टाइम व्यापार संकेत, लाइव साझा रूट और खेत से सीधी आपूर्ति देखें",
     "directMarketTitle": "प्रत्यक्ष कृषि उपज बाज़ार",
     "directMarketDesc": "लाइव तस्वीरों, उचित मूल्य मानकों और फार्म-टू-फोर्क क्यूआर कोड के साथ 68+ सत्यापित किसानों की उपज देखें।",
@@ -1435,11 +1435,11 @@ export const translations = {
     "trackLiveDelivery": "लाइव डिलीवरी ट्रैक करें",
     "quickPostLocation": "लाइव चेकपॉइंट लोकेशन अपडेट करें:",
     "allCrops": "सभी फसलें",
-    "connectingMsg": "annDhana फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
+    "connectingMsg": "AnnDhara फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
     "connectingSub": "मांग मॉडल, क्षेत्रीय हीटमैप और मंडी डेटा फीड प्रारंभ किए जा रहे हैं"
   },
   "ne": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -1482,7 +1482,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -1511,11 +1511,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "sd": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "AI Market Intelligence & Fair Price Discovery for Indian Farmers",
     "footerNetwork": "AI-Powered Demand-to-Delivery Agricultural Network",
     "footerSub": "Transparent Farmgate-to-Fork Network",
@@ -1558,7 +1558,7 @@ export const translations = {
     "activeDispatches": "Active dispatches",
     "onTimeRate": "On-time rate",
     "sharedFuelSavings": "Shared route fuel savings",
-    "commandPortalsHeading": "annDhana Platform Command Portals",
+    "commandPortalsHeading": "AnnDhara Platform Command Portals",
     "commandPortalsSub": "Explore real-time trade signals, live shared dispatch routes, and direct farmgate supply",
     "directMarketTitle": "Direct Farm Produce Marketplace",
     "directMarketDesc": "Browse 68+ verified farmer lots with live photographs, Fair Price benchmarks, and Farm-to-Fork QR traceability.",
@@ -1587,11 +1587,11 @@ export const translations = {
     "trackLiveDelivery": "Track Live Delivery",
     "quickPostLocation": "Quick-Post Live Checkpoint Location:",
     "allCrops": "All Crops",
-    "connectingMsg": "Connecting to annDhana Farm-to-Market Network...",
+    "connectingMsg": "Connecting to AnnDhara Farm-to-Market Network...",
     "connectingSub": "Initializing demand models, regional heatmaps, and agricultural data feeds"
   },
   "sa": {
-    "brandTitle": "annDhana",
+    "brandTitle": "AnnDhara",
     "brandTagline": "भारतीय किसानों के लिए एआई बाज़ार बुद्धिमत्ता और उचित मूल्य खोज",
     "footerNetwork": "एआई-संचालित मांग-से-वितरण कृषि नेटवर्क",
     "footerSub": "पारदर्शी खेत-से-उपभोक्ता नेटवर्क",
@@ -1634,7 +1634,7 @@ export const translations = {
     "activeDispatches": "सक्रिय डिस्पैच",
     "onTimeRate": "समय पर डिलीवरी दर",
     "sharedFuelSavings": "साझा मार्ग ईंधन बचत",
-    "commandPortalsHeading": "annDhana प्लेटफॉर्म कमांड पोर्टल",
+    "commandPortalsHeading": "AnnDhara प्लेटफॉर्म कमांड पोर्टल",
     "commandPortalsSub": "रीयल-टाइम व्यापार संकेत, लाइव साझा रूट और खेत से सीधी आपूर्ति देखें",
     "directMarketTitle": "प्रत्यक्ष कृषि उपज बाज़ार",
     "directMarketDesc": "लाइव तस्वीरों, उचित मूल्य मानकों और फार्म-टू-फोर्क क्यूआर कोड के साथ 68+ सत्यापित किसानों की उपज देखें।",
@@ -1663,7 +1663,7 @@ export const translations = {
     "trackLiveDelivery": "लाइव डिलीवरी ट्रैक करें",
     "quickPostLocation": "लाइव चेकपॉइंट लोकेशन अपडेट करें:",
     "allCrops": "सभी फसलें",
-    "connectingMsg": "annDhana फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
+    "connectingMsg": "AnnDhara फार्म-टू-मार्केट नेटवर्क से कनेक्ट हो रहा है...",
     "connectingSub": "मांग मॉडल, क्षेत्रीय हीटमैप और मंडी डेटा फीड प्रारंभ किए जा रहे हैं"
   }
 };
@@ -1698,7 +1698,7 @@ function setGoogleTranslateCookie(langCode) {
 export function LanguageProvider({ children }) {
   const [currentLanguage, setCurrentLanguage] = useState(() => {
     try {
-      return localStorage.getItem('anndhana_lang') || 'en';
+      return (localStorage.getItem('anndhara_lang') || localStorage.getItem('anndhana_lang')) || 'en';
     } catch {
       return 'en';
     }
@@ -1707,7 +1707,8 @@ export function LanguageProvider({ children }) {
   const setLanguage = (lang) => {
     setCurrentLanguage(lang);
     try {
-      localStorage.setItem('anndhana_lang', lang);
+      localStorage.setItem('anndhara_lang', lang);
+    localStorage.setItem('anndhana_lang', lang);
     } catch (e) {
       console.error('Error saving language', e);
     }

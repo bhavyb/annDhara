@@ -560,7 +560,8 @@ def optimize_shared_logistics_route(
     pickups: Optional[List[Dict[str, Any]]] = None,
     deliveries: Optional[List[Dict[str, Any]]] = None,
     vehicle_capacity_kg: float = 1000.0,
-    cost_per_km: float = 24.0
+    cost_per_km: float = 24.0,
+    selected_farmers: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Solves multi-pickup multi-delivery shared vehicle logistics:
@@ -646,6 +647,27 @@ def optimize_shared_logistics_route(
             "otp": "8106"
         }
     ]
+
+    if not pickups and selected_farmers:
+        norm_farmers = [s.strip().lower() for s in selected_farmers if s]
+        matched_p = [
+            p for p in default_pickups 
+            if p["name"].strip().lower() in norm_farmers or p["id"].strip().lower() in norm_farmers
+        ]
+        if matched_p:
+            default_pickups = matched_p
+            crops_from_selected = {p["crop"] for p in matched_p}
+            filtered_drops = []
+            for d in default_deliveries:
+                matching_items = {k: v for k, v in d.get("items", {}).items() if k in crops_from_selected}
+                if matching_items:
+                    d_copy = dict(d)
+                    d_copy["items"] = matching_items
+                    d_copy["drop_kg"] = sum(matching_items.values())
+                    sources = [p["name"] for p in matched_p if p["crop"] in matching_items]
+                    d_copy["from_farmer"] = ", ".join(sources)
+                    filtered_drops.append(d_copy)
+            default_deliveries = filtered_drops
 
     stops_pickups = pickups if pickups else default_pickups
     stops_drops = deliveries if deliveries else default_deliveries
@@ -785,6 +807,8 @@ def optimize_shared_logistics_route(
             "otp_type": "pickup",
             "otp": p_otp,
             "reference": p.get("reference", ""),
+            "all_references": p.get("all_references", [p.get("reference", "")]),
+            "target_customers": p.get("target_customers", ""),
             "otp_verified": False,
             "stakeholder_label": f"Farmer: {p.get('farmer_title') or p.get('name')}",
             "phone": p.get("phone", "+91 98251 00000"),
@@ -814,6 +838,8 @@ def optimize_shared_logistics_route(
 
         item_str = ", ".join(f"{v}kg {k}" for k, v in d.get("items", {}).items()) if d.get("items") else f"{d['drop_kg']:.0f} kg"
         d_otp = str(d.get("otp") or (5000 + step_num * 243))
+        from_f = d.get("from_farmer", "")
+        f_note = f" (Harvest from {from_f})" if from_f else ""
 
         route_sequence.append({
             "stop_id": f"STOP-{step_num}",
@@ -824,10 +850,11 @@ def optimize_shared_logistics_route(
             "reference": d.get("reference", ""),
             "otp_verified": False,
             "stakeholder_label": f"Customer: {d['name']}",
+            "from_farmer": from_f,
             "phone": d.get("phone", "+91 98254 00000"),
             "entity": d["name"],
             "location": d["location"],
-            "action": f"Deliver {item_str} (Required by {d.get('deadline', 'Noon')})",
+            "action": f"Deliver {item_str} to {d['name']}{f_note} (Required by {d.get('deadline', 'Noon')})",
             "onboard_load_kg": current_load,
             "capacity_kg": vehicle_capacity_kg,
             "utilization_pct": util_pct,

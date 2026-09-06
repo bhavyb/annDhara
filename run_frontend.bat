@@ -1,7 +1,7 @@
 @echo off
-title annDhana Frontend Dev Server
+title AnnDhara Frontend Dev Server
 echo ===================================================
-echo Starting annDhana React Frontend on http://localhost:5173
+echo Starting AnnDhara React Frontend on http://localhost:5173
 echo ===================================================
 
 set "PATH=%~dp0.tools\node;%PATH%"

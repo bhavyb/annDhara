@@ -424,7 +424,7 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
                 Registered Harvests & Active Supply Lots
               </h3>
               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                Live inventory connected to the annDhana Buyer Matching & Shared Logistics Engine
+                Live inventory connected to the AnnDhara Buyer Matching & Shared Logistics Engine
               </div>
             </div>
 
@@ -604,7 +604,7 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
 
                         <a
                           href={`https://wa.me/${(item.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                            `Namaste ${item.farmer_name}, I saw your ${item.crop} listing on annDhana.`
+                            `Namaste ${item.farmer_name}, I saw your ${item.crop} listing on AnnDhara.`
                           )}`}
                           target="_blank"
                           rel="noreferrer"

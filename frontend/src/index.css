@@ -2197,7 +2197,19 @@ h6 {
   font-size: 0.85rem;
 }
 
-/* annDhana Class Aliases */
+/* AnnDhara Class Aliases */
+.anndhara-card,
+.anndhana-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.anndhara-alert,
 .anndhana-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -2303,4 +2315,4 @@ font[style*="vertical-align"]:hover {
   position: static !important;
   display: inline !important;
 }
-
+
