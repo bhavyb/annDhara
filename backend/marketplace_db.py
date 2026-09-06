@@ -293,9 +293,18 @@ def get_listings(
     status: str = "active",
     limit: int = 250
 ) -> List[Dict[str, Any]]:
-    """Retrieves listings with optional filtering by crop, location, or harvest type."""
-    query = "SELECT * FROM listings WHERE status = ?"
-    params: List[Any] = [status]
+    """Retrieves listings with optional filtering by crop, location, or harvest type.
+    Active status strictly requires quantity_kg > 0 and status = 'active' so sold-out lots
+    are automatically omitted from the active Buyer Marketplace."""
+    if status == "active":
+        query = "SELECT * FROM listings WHERE status = 'active' AND quantity_kg > 0"
+        params: List[Any] = []
+    elif status and status.lower() != "all":
+        query = "SELECT * FROM listings WHERE status = ?"
+        params = [status]
+    else:
+        query = "SELECT * FROM listings WHERE 1=1"
+        params = []
 
     if crop:
         query += " AND LOWER(crop) = LOWER(?)"
@@ -318,6 +327,7 @@ def get_listings(
         cursor.execute(query, params)
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
+
 
 
 # =============================================================================
@@ -776,7 +786,7 @@ def authenticate_user(email: str, password: str) -> Optional[Dict[str, Any]]:
         return _public_user(row)
 
 
-DELIVERY_STATUSES = ("Assigned", "Accepted", "Picked Up", "In Transit", "Delivered")
+DELIVERY_STATUSES = ("Assigned", "Accepted", "Picked Up", "In Transit", "Delivered", "Cancelled")
 DELIVERY_STATUS_ORDER = {status: index for index, status in enumerate(DELIVERY_STATUSES)}
 
 def create_delivery_assignment(
@@ -794,8 +804,12 @@ def create_delivery_assignment(
     vehicle_number: str = "",
     eta: str = "",
 ) -> Dict[str, Any]:
-    """Create a durable assignment shared by the three stakeholder portals with live location tracking."""
-    if float(quantity_kg) <= 0:
+    """Create a durable assignment shared by the three stakeholder portals with live location tracking.
+    Automatically checks and deducts produce inventory from the farmer's listing in the database.
+    Prevents overselling via atomic update guards, and automatically transitions status to 'sold_out'
+    when available quantity reaches 0 kg."""
+    order_qty = float(quantity_kg)
+    if order_qty <= 0:
         raise ValueError("Quantity must be greater than zero")
     required = (crop, farmer_name, buyer_name, pickup_location, destination)
     if any(not str(value).strip() for value in required):
@@ -805,8 +819,63 @@ def create_delivery_assignment(
     loc = current_location.strip() or f"Awaiting pickup dispatch at {pickup_location.strip()}"
     p_otp = f"{random.randint(1000, 9999)}"
     d_otp = f"{random.randint(1000, 9999)}"
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
+
+        target_listing = None
+        # 1. Resolve target listing by ID or fallback match by crop + farmer_name
+        if listing_id is not None:
+            target_listing = cursor.execute("SELECT * FROM listings WHERE id = ?", (int(listing_id),)).fetchone()
+            if not target_listing:
+                raise ValueError(f"Produce listing #{listing_id} not found")
+        else:
+            # Fallback lookup: find matching active lot for this crop and farmer with stock
+            target_listing = cursor.execute(
+                """SELECT * FROM listings
+                   WHERE LOWER(crop) = LOWER(?) AND LOWER(farmer_name) = LOWER(?)
+                     AND status = 'active' AND quantity_kg > 0
+                   ORDER BY id DESC LIMIT 1""",
+                (crop.strip(), farmer_name.strip())
+            ).fetchone()
+
+        remaining_qty = None
+        lot_status = None
+        asking_price = None
+        remaining_lot_val = None
+
+        if target_listing:
+            curr_qty = float(target_listing["quantity_kg"])
+            curr_status = target_listing["status"]
+            asking_price = float(target_listing["asking_price_kg"] or 0.0)
+            lid = target_listing["id"]
+
+            if curr_status == "sold_out" or curr_qty <= 0:
+                raise ValueError(f"Produce lot for {target_listing['crop']} is sold out.")
+
+            if order_qty > curr_qty:
+                raise ValueError(
+                    f"Cannot order {order_qty:g} kg. Only {curr_qty:g} kg available in this lot."
+                )
+
+            # Deduct inventory atomically with race condition guard
+            remaining_qty = round(curr_qty - order_qty, 2)
+            if remaining_qty < 0:
+                remaining_qty = 0.0
+            lot_status = "sold_out" if remaining_qty <= 0 else "active"
+            remaining_lot_val = round(remaining_qty * asking_price, 2)
+
+            cursor.execute(
+                """UPDATE listings
+                   SET quantity_kg = ?, status = ?
+                   WHERE id = ? AND quantity_kg >= ?""",
+                (remaining_qty, lot_status, lid, order_qty)
+            )
+            if cursor.rowcount == 0:
+                raise ValueError("Inventory conflict: Another buyer may have just purchased from this lot. Please refresh and try again.")
+
+            listing_id = lid
+
         cursor.execute(
             """INSERT INTO delivery_updates
                (reference, crop, quantity_kg, farmer_name, buyer_name, logistics_name,
@@ -814,7 +883,7 @@ def create_delivery_assignment(
                 logistics_id, accepted_at, created_at, current_location, vehicle_number, eta,
                 pickup_otp, delivery_otp, pickup_verified_at, delivery_verified_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Assigned', ?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, '', '')""",
-            (reference, clean_text(crop), float(quantity_kg), clean_text(farmer_name),
+            (reference, clean_text(crop), order_qty, clean_text(farmer_name),
              clean_text(buyer_name), clean_text(logistics_name) or "Unassigned",
              clean_text(pickup_location), clean_text(destination), now, listing_id,
              demand_id, logistics_id, now, loc, clean_text(vehicle_number), clean_text(eta),
@@ -822,7 +891,13 @@ def create_delivery_assignment(
         )
         conn.commit()
         row = cursor.execute("SELECT * FROM delivery_updates WHERE id = ?", (cursor.lastrowid,)).fetchone()
-        return dict(row)
+        delivery_dict = dict(row)
+        if remaining_qty is not None:
+            delivery_dict["remaining_quantity_kg"] = remaining_qty
+            delivery_dict["lot_status"] = lot_status
+            delivery_dict["asking_price_kg"] = asking_price
+            delivery_dict["remaining_lot_value"] = remaining_lot_val
+        return delivery_dict
 
 
 def get_delivery_by_reference(reference: str) -> Optional[Dict[str, Any]]:
@@ -1057,6 +1132,55 @@ def accept_delivery(
         return dict(row) if row else None
 
 
+def cancel_delivery(reference: str, reason: str = "") -> Optional[Dict[str, Any]]:
+    """Cancels an unfulfilled delivery assignment and restores deducted quantity back to the farmer's listing inventory."""
+    clean_ref = reference.strip()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        delivery = cursor.execute("SELECT * FROM delivery_updates WHERE LOWER(reference) = LOWER(?)", (clean_ref,)).fetchone()
+        if not delivery:
+            raise ValueError(f"Delivery reference {clean_ref} not found")
+
+        curr_status = delivery["status"]
+        if curr_status == "Delivered":
+            raise ValueError("Cannot cancel a delivery that has already been delivered and fulfilled.")
+
+        if curr_status == "Cancelled":
+            # Idempotent: already cancelled
+            return dict(delivery)
+
+        order_qty = float(delivery["quantity_kg"])
+        lid = delivery["listing_id"]
+
+        # Restore inventory to listing if linked
+        if lid:
+            listing = cursor.execute("SELECT * FROM listings WHERE id = ?", (lid,)).fetchone()
+            if listing:
+                restored_qty = round(float(listing["quantity_kg"]) + order_qty, 2)
+                cursor.execute(
+                    """UPDATE listings
+                       SET quantity_kg = ?, status = 'active'
+                       WHERE id = ?""",
+                    (restored_qty, lid)
+                )
+
+        reason_text = f" - Reason: {reason.strip()}" if reason.strip() else ""
+        loc_msg = f"Order cancelled prior to fulfillment. {order_qty:g} kg restored to farmer inventory.{reason_text}"
+
+        cursor.execute(
+            """UPDATE delivery_updates
+               SET status = 'Cancelled', current_location = ?, updated_at = ?
+               WHERE LOWER(reference) = LOWER(?)""",
+            (loc_msg, now, clean_ref)
+        )
+        conn.commit()
+
+        updated = cursor.execute("SELECT * FROM delivery_updates WHERE LOWER(reference) = LOWER(?)", (clean_ref,)).fetchone()
+        return dict(updated) if updated else None
+
+
 def update_delivery_status(
     reference: str,
     status: str,
@@ -1066,6 +1190,11 @@ def update_delivery_status(
 ) -> Optional[Dict[str, Any]]:
     """Updates a delivery milestone and/or real-time location checkpoint."""
     normalized_status = status.strip().title() if status else ""
+
+    # Delegate cancellation directly to cancel_delivery for proper inventory restoration
+    if normalized_status in ("Cancelled", "Canceled"):
+        return cancel_delivery(reference, reason=current_location or "")
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
         row = cursor.execute("SELECT * FROM delivery_updates WHERE reference = ?", (reference.strip(),)).fetchone()
@@ -1073,6 +1202,9 @@ def update_delivery_status(
             return None
 
         current_status = row["status"]
+        if current_status == "Cancelled":
+            raise ValueError("Cannot modify the status of a cancelled delivery.")
+
         new_status = normalized_status if normalized_status else current_status
 
         if new_status not in DELIVERY_STATUSES:

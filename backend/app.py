@@ -80,6 +80,7 @@ from marketplace_db import (
     get_delivery_by_reference,
     accept_delivery,
     update_delivery_status,
+    cancel_delivery,
     verify_delivery_pickup,
     verify_delivery_dropoff,
     get_db_connection
@@ -176,7 +177,17 @@ def api_deliveries():
         )
         if assignment and "reference" in assignment:
             assignment["tracking_reference"] = assignment["reference"]
-        return jsonify({"success": True, "delivery": assignment}), 201
+        return jsonify({
+            "success": True,
+            "delivery": assignment,
+            "lot_update": {
+                "listing_id": assignment.get("listing_id"),
+                "remaining_quantity_kg": assignment.get("remaining_quantity_kg"),
+                "lot_status": assignment.get("lot_status"),
+                "asking_price_kg": assignment.get("asking_price_kg"),
+                "remaining_lot_value": assignment.get("remaining_lot_value")
+            }
+        }), 201
     except (TypeError, ValueError) as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
 
@@ -367,6 +378,29 @@ def api_delivery_status(reference: str):
         return jsonify({"success": True, "delivery": delivery})
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
+
+
+@app.route("/api/deliveries/<reference>/cancel", methods=["POST"])
+def api_delivery_cancel(reference: str):
+    """Cancels an unfulfilled delivery assignment and automatically restores produce quantity to the farmer's listing inventory."""
+    payload = request.get_json(force=True, silent=True) or {}
+    reason = payload.get("reason", "")
+    try:
+        delivery = cancel_delivery(reference=reference, reason=reason)
+        if not delivery:
+            return jsonify({"success": False, "error": "Delivery not found"}), 404
+        delivery["pickup_otp"] = ""
+        delivery["delivery_otp"] = ""
+        delivery.pop("demo_pickup_otp", None)
+        delivery.pop("demo_delivery_otp", None)
+        return jsonify({
+            "success": True,
+            "delivery": delivery,
+            "message": f"Order {reference} cancelled successfully. Ordered quantity restored to farmer inventory."
+        })
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
 
 
 @app.route("/api/deliveries/<reference>/verify-pickup", methods=["POST"])
@@ -629,9 +663,10 @@ def api_listings():
         crop = request.args.get("crop")
         location = request.args.get("location")
         pre_harvest_str = request.args.get("is_pre_harvest")
+        status_param = request.args.get("status", "active")
         is_pre = int(pre_harvest_str) if pre_harvest_str is not None else None
         try:
-            listings = get_listings(crop=crop, location=location, is_pre_harvest=is_pre)
+            listings = get_listings(crop=crop, location=location, is_pre_harvest=is_pre, status=status_param)
             return jsonify({
                 "success": True,
                 "count": len(listings),

@@ -72,26 +72,35 @@ export default function SmartMatchingModule({
   const handleOrderBestFarmer = async (farmer) => {
     setOrderingBestFarmer(true);
     try {
+      const orderQty = Math.min(Number(buyerQty), farmer.quantity_available_kg);
       const res = await fetch('/api/deliveries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           crop: farmer.crop,
-          quantity_kg: Math.min(Number(buyerQty), farmer.quantity_available_kg),
+          quantity_kg: orderQty,
           farmer_name: farmer.farmer_name,
           buyer_name: user?.name || 'Direct Verified Buyer',
           pickup_location: farmer.farmer_location,
-          destination: buyerLocation
+          destination: buyerLocation,
+          listing_id: farmer.listing_id
         })
       });
       const data = await res.json();
       if (data.success) {
+        const remainingNote = data.delivery?.remaining_quantity_kg !== undefined
+          ? ` • Remaining Lot: ${data.delivery.remaining_quantity_kg} kg`
+          : '';
         setBestFarmerOrderSuccess(
-          `Delivery booked! Tracking: ${data.delivery.tracking_reference} • Delivery OTP: ${data.delivery.delivery_otp || 'Generated'}. Carrier dispatched to farmgate.`
+          `Delivery booked! Tracking: ${data.delivery.tracking_reference || data.delivery.reference} • Delivery OTP: ${data.delivery.delivery_otp || 'Generated'}. Carrier dispatched to farmgate.${remainingNote}`
         );
+        runBestFarmerMatch();
+      } else {
+        alert(data.error || 'Failed to place delivery order');
       }
     } catch (err) {
       console.error(err);
+      alert('Network error while booking delivery');
     } finally {
       setOrderingBestFarmer(false);
     }

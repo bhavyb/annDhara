@@ -196,6 +196,7 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
       const data = await res.json();
       if (res.ok && data.success) {
         setOrderSuccess(data.delivery);
+        fetchListings();
       } else {
         setOrderError(data.error || 'Failed to create delivery order');
       }
@@ -981,6 +982,14 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
                     Carrying <strong>{orderSuccess.quantity_kg} kg {orderSuccess.crop}</strong> from Farmer <strong>{orderSuccess.farmer_name}</strong>
                   </div>
+                  {orderSuccess.remaining_quantity_kg !== undefined && (
+                    <div style={{ marginTop: '10px', fontSize: '0.8rem', color: orderSuccess.remaining_quantity_kg > 0 ? 'var(--palette-forest)' : '#DC2626', fontWeight: 700 }}>
+                      {orderSuccess.remaining_quantity_kg > 0
+                        ? `📦 Farmer's Remaining Lot: ${orderSuccess.remaining_quantity_kg} kg • Total Remaining Lot Value: ₹${(orderSuccess.remaining_lot_value || 0).toLocaleString()}`
+                        : `🎉 Farmer's lot is now 100% Sold Out (0 kg remaining). Listing automatically archived from active marketplace.`
+                      }
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>

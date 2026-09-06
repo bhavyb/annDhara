@@ -60,7 +60,7 @@ def train_prophet_model(df: pd.DataFrame) -> Tuple[Any, pd.DataFrame]:
     model.fit(df)
     
     # Create 7-day future dataframe
-    future = model.make_future_dataframe(periods=7, freq='D')
+    future = model.make_future_dataframe(periods=8, freq='D')
     forecast = model.predict(future)
     return model, forecast
 
@@ -175,7 +175,7 @@ def predict_fair_price(crop: str, mandi: str, force_retrain: bool = False) -> Di
                     saved_obj = pickle.load(f)
                     model = saved_obj.get("model")
                     if model:
-                        future = model.make_future_dataframe(periods=7, freq='D')
+                        future = model.make_future_dataframe(periods=8, freq='D')
                         forecast = model.predict(future)
                         model_type = "Facebook Prophet"
                         logger.info(f"Loaded cached Prophet model for {crop_clean} - {mandi_clean}")

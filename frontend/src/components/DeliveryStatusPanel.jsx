@@ -96,6 +96,28 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
     }
   };
 
+  const cancelDelivery = async (delivery) => {
+    if (!window.confirm(`Are you sure you want to cancel order ${delivery.reference}? The reserved ${delivery.quantity_kg} kg of ${delivery.crop} will be automatically restored to the farmer's lot.`)) {
+      return;
+    }
+    setUpdating(delivery.reference);
+    setError('');
+    try {
+      const response = await fetch(`/api/deliveries/${delivery.reference}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Cancelled prior to fulfillment' })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Unable to cancel order');
+      setDeliveries((current) => current.map((item) => (item.reference === delivery.reference ? data.delivery : item)));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUpdating('');
+    }
+  };
+
   const updateLocationOnly = async (delivery, locationText) => {
     if (!locationText || !locationText.trim()) return;
     setUpdating(delivery.reference);
@@ -348,8 +370,8 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
                       fontWeight: 800,
                       padding: '4px 12px',
                       borderRadius: '12px',
-                      background: isDelivered ? '#E8F5E9' : isInTransit ? '#EFF6FF' : '#FEF3C7',
-                      color: isDelivered ? 'var(--color-crop)' : isInTransit ? '#2563EB' : '#B45309'
+                      background: delivery.status === 'Cancelled' ? '#FEE2E2' : isDelivered ? '#E8F5E9' : isInTransit ? '#EFF6FF' : '#FEF3C7',
+                      color: delivery.status === 'Cancelled' ? '#DC2626' : isDelivered ? 'var(--color-crop)' : isInTransit ? '#2563EB' : '#B45309'
                     }}
                   >
                     ● {delivery.status}
@@ -375,14 +397,38 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
                     <Navigation size={12} />
                     <span>{loadingMap === delivery.reference ? 'Loading...' : '🗺️ AI Map'}</span>
                   </button>
+
+                  {delivery.status !== 'Delivered' && delivery.status !== 'Cancelled' && (
+                    <button
+                      type="button"
+                      onClick={() => cancelDelivery(delivery)}
+                      disabled={updating === delivery.reference}
+                      title="Cancel order and restore lot inventory to farmer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: '#FEF2F2',
+                        color: '#DC2626',
+                        border: '1px solid #FECACA',
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>{updating === delivery.reference ? 'Cancelling...' : '✕ Cancel Order'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Real-time Location Highlight Box ("Logistics Kya Chhe") */}
               <div
                 style={{
-                  background: isDelivered ? '#F0FDF4' : 'linear-gradient(135deg, #FAF5FF 0%, #EFF6FF 100%)',
-                  border: `1px solid ${isDelivered ? '#BBF7D0' : '#DDD6FE'}`,
+                  background: isDelivered ? '#F0FDF4' : delivery.status === 'Cancelled' ? '#FEF2F2' : 'linear-gradient(135deg, #FAF5FF 0%, #EFF6FF 100%)',
+                  border: `1px solid ${isDelivered ? '#BBF7D0' : delivery.status === 'Cancelled' ? '#FECACA' : '#DDD6FE'}`,
                   borderRadius: '8px',
                   padding: '12px 16px',
                   display: 'flex',
@@ -393,7 +439,7 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ background: isDelivered ? 'var(--color-crop)' : '#7C3AED', color: 'white', padding: '6px', borderRadius: '50%', display: 'flex' }}>
+                  <div style={{ background: isDelivered ? 'var(--color-crop)' : delivery.status === 'Cancelled' ? '#DC2626' : '#7C3AED', color: 'white', padding: '6px', borderRadius: '50%', display: 'flex' }}>
                     <Navigation size={16} />
                   </div>
                   <div>
@@ -413,47 +459,54 @@ export default function DeliveryStatusPanel({ role, stakeholder, user }) {
                 </div>
               </div>
 
-              {/* Progress Stepper Timeline */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', overflowX: 'auto', padding: '6px 0' }}>
-                {statuses.map((status, index) => {
-                  const isPassed = index <= currentIndex;
-                  const isCurrent = index === currentIndex;
-                  return (
-                    <div
-                      key={status}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '0.74rem',
-                        fontWeight: isCurrent ? 800 : isPassed ? 700 : 500,
-                        color: isPassed ? 'var(--color-crop)' : 'var(--color-text-muted)',
-                        minWidth: 'fit-content'
-                      }}
-                    >
+              {/* Progress Stepper or Cancellation Banner */}
+              {delivery.status === 'Cancelled' ? (
+                <div style={{ padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', color: '#B91C1C', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                  <AlertCircle size={16} />
+                  <span>Order Cancelled prior to fulfillment • Ordered quantity ({delivery.quantity_kg} kg) has been restored to the farmer's lot.</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', overflowX: 'auto', padding: '6px 0' }}>
+                  {statuses.map((status, index) => {
+                    const isPassed = index <= currentIndex;
+                    const isCurrent = index === currentIndex;
+                    return (
                       <div
+                        key={status}
                         style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: isPassed ? 'var(--color-crop)' : '#E5E7EB',
-                          color: isPassed ? 'white' : '#9CA3AF',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.7rem',
-                          fontWeight: 800,
-                          boxShadow: isCurrent ? '0 0 0 3px rgba(30, 107, 45, 0.2)' : 'none'
+                          gap: '6px',
+                          fontSize: '0.74rem',
+                          fontWeight: isCurrent ? 800 : isPassed ? 700 : 500,
+                          color: isPassed ? 'var(--color-crop)' : 'var(--color-text-muted)',
+                          minWidth: 'fit-content'
                         }}
                       >
-                        {isPassed ? <Check size={14} /> : index + 1}
+                        <div
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: isPassed ? 'var(--color-crop)' : '#E5E7EB',
+                            color: isPassed ? 'white' : '#9CA3AF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            boxShadow: isCurrent ? '0 0 0 3px rgba(30, 107, 45, 0.2)' : 'none'
+                          }}
+                        >
+                          {isPassed ? <Check size={14} /> : index + 1}
+                        </div>
+                        <span>{status}</span>
+                        {index < statuses.length - 1 && <ChevronRight size={14} color="#D1D5DB" />}
                       </div>
-                      <span>{status}</span>
-                      {index < statuses.length - 1 && <ChevronRight size={14} color="#D1D5DB" />}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* FARMER SECURE PICKUP OTP BOX */}
               {role === 'farmer' && delivery.pickup_otp && (
