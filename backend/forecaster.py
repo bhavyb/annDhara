@@ -23,7 +23,7 @@ except ImportError:
 from sklearn.linear_model import Ridge
 
 from data_cleaner import clean_text
-from data_fetcher import get_historical_series
+from data_fetcher import get_historical_series, resolve_mandi, get_commodity_real_records
 
 logger = logging.getLogger("NexusForecaster")
 
@@ -49,7 +49,7 @@ def train_prophet_model(df: pd.DataFrame) -> Tuple[Any, pd.DataFrame]:
     if Prophet is None:
         raise ImportError("Facebook Prophet is not installed. Using Ridge regression fallback.")
 
-    # Daily seasonality, weekly seasonality enabled for agricultural mandi trading
+    # Daily seasonality False, weekly seasonality True for mandi trading cycles
     model = Prophet(
         daily_seasonality=False,
         weekly_seasonality=True,
@@ -67,8 +67,8 @@ def train_prophet_model(df: pd.DataFrame) -> Tuple[Any, pd.DataFrame]:
 
 def fallback_linear_forecast(df: pd.DataFrame, days: int = 7) -> pd.DataFrame:
     """
-    Robust fallback using scikit-learn Ridge regression + rolling standard deviation
-    in case historical points are very sparse or Prophet Stan backend raises an issue.
+    Fallback using Ridge regression + rolling standard deviation
+    when historical records are sparse or during prototype fallback mode.
     """
     df = df.sort_values('ds').reset_index(drop=True)
     df['day_idx'] = (df['ds'] - df['ds'].min()).dt.days
@@ -107,63 +107,102 @@ def predict_fair_price(crop: str, mandi: str, force_retrain: bool = False) -> Di
     - forecast_7_days: list of daily predictions
     - historical_points: past 14 days of actual mandi arrivals
     - confidence_pct: confidence score
-    - model_used: 'Prophet' or 'Ridge Regression Fallback'
+    - model_engine: 'Facebook Prophet' or 'Prototype/Fallback Data'
     """
     crop_clean = clean_text(crop)
-    mandi_clean = clean_text(mandi)
+    canonical = resolve_mandi(mandi, commodity=crop_clean)
+    mandi_clean = canonical.get("market") if canonical else clean_text(mandi)
+    mandi_display = canonical.get("market") if canonical else mandi
+
     model_file = get_model_path(crop_clean, mandi_clean)
 
     # 1. Fetch historical series from cached/live Agmarknet dataset
     history = get_historical_series(crop_clean, mandi_clean)
+    is_fallback = False
+    fallback_notice = ""
+    model_type = "Facebook Prophet"
+
     if not history:
-        raise ValueError(f"No historical price records found for {crop_clean} at {mandi_clean}")
+        # No historical arrival records reported for this specific crop at this mandi.
+        # Provide Prototype/Fallback baseline clearly tagged as fallback data.
+        is_fallback = True
+        model_type = "Prototype/Fallback Data"
+        fallback_notice = f"Historical arrival data is unavailable for {crop_clean} at {mandi_display}. Showing regional prototype baseline estimate."
+
+        crop_records = get_commodity_real_records(crop_clean)
+        if crop_records:
+            prices = [float(r.get("modal_price", 0)) for r in crop_records if r.get("modal_price")]
+            base_modal = round(sum(prices) / len(prices), 2) if prices else 2200.0
+            min_p = round(base_modal * 0.90, 2)
+            max_p = round(base_modal * 1.10, 2)
+        else:
+            base_modal = 2500.0
+            min_p = 2200.0
+            max_p = 2800.0
+
+        today = datetime.now().date()
+        history = []
+        for i in range(13, -1, -1):
+            d = today - timedelta(days=i)
+            offset = np.sin(i * 0.5) * 0.015
+            p = round(base_modal * (1.0 + offset), 2)
+            history.append({
+                "arrival_date": d.strftime("%Y-%m-%d"),
+                "modal_price": p,
+                "modal_price_kg": round(p / 100.0, 2),
+                "min_price": min_p,
+                "max_price": max_p
+            })
 
     # Build DataFrame for training
     data_rows = []
     for r in history:
         date_str = r.get("arrival_date")
         price = r.get("modal_price")
-        if date_str and price and price > 0:
+        if date_str and price and float(price) > 0:
             data_rows.append({"ds": pd.to_datetime(date_str), "y": float(price)})
-
-    if not data_rows:
-        raise ValueError(f"No valid price points available for {crop_clean} at {mandi_clean}")
 
     df = pd.DataFrame(data_rows).drop_duplicates(subset=['ds']).sort_values('ds')
 
     model = None
     forecast = None
-    model_type = "Prophet"
 
-    # Check if cached trained model exists and not forced retrain
-    if os.path.exists(model_file) and not force_retrain:
-        try:
-            with open(model_file, "rb") as f:
-                saved_obj = pickle.load(f)
-                model = saved_obj.get("model")
-                if model:
-                    future = model.make_future_dataframe(periods=7, freq='D')
-                    forecast = model.predict(future)
-                    logger.info(f"Loaded cached Prophet model for {crop_clean} - {mandi_clean}")
-        except Exception as e:
-            logger.warning(f"Failed to load cached model: {e}. Will retrain.")
-            model = None
+    if not is_fallback:
+        # Check if cached trained Prophet model exists and not forced retrain
+        if os.path.exists(model_file) and not force_retrain:
+            try:
+                with open(model_file, "rb") as f:
+                    saved_obj = pickle.load(f)
+                    model = saved_obj.get("model")
+                    if model:
+                        future = model.make_future_dataframe(periods=7, freq='D')
+                        forecast = model.predict(future)
+                        model_type = "Facebook Prophet"
+                        logger.info(f"Loaded cached Prophet model for {crop_clean} - {mandi_clean}")
+            except Exception as e:
+                logger.warning(f"Failed to load cached model: {e}. Will retrain.")
+                model = None
 
-    # Train if model not loaded
-    if model is None or forecast is None:
-        try:
-            if len(df) >= 3:
-                model, forecast = train_prophet_model(df)
-                # Cache model to pickle file
-                with open(model_file, "wb") as f:
-                    pickle.dump({"model": model, "crop": crop_clean, "mandi": mandi_clean, "trained_at": datetime.now().isoformat()}, f)
-                logger.info(f"Trained & cached new Prophet model for {crop_clean} - {mandi_clean}")
-            else:
-                raise ValueError("Insufficient history for Prophet (needs >= 3 points)")
-        except Exception as e:
-            logger.warning(f"Prophet fitting encountered: {e}. Switching to linear trend fallback.")
-            forecast = fallback_linear_forecast(df, days=7)
-            model_type = "Linear Trend Model"
+        # Train Facebook Prophet model if not loaded from cache
+        if model is None or forecast is None:
+            try:
+                if len(df) >= 3 and Prophet is not None:
+                    model, forecast = train_prophet_model(df)
+                    model_type = "Facebook Prophet"
+                    # Cache model to pickle file
+                    with open(model_file, "wb") as f:
+                        pickle.dump({"model": model, "crop": crop_clean, "mandi": mandi_clean, "trained_at": datetime.now().isoformat()}, f)
+                    logger.info(f"Trained & cached new Facebook Prophet model for {crop_clean} - {mandi_clean}")
+                else:
+                    forecast = fallback_linear_forecast(df, days=7)
+                    model_type = "Linear Trend Model"
+            except Exception as e:
+                logger.warning(f"Prophet fitting error: {e}. Falling back to linear trend.")
+                forecast = fallback_linear_forecast(df, days=7)
+                model_type = "Linear Trend Model"
+    else:
+        forecast = fallback_linear_forecast(df, days=7)
+        model_type = "Prototype/Fallback Data"
 
     # Filter forecast to only future 7 days
     last_hist_date = df['ds'].max()
@@ -174,8 +213,8 @@ def predict_fair_price(crop: str, mandi: str, force_retrain: bool = False) -> Di
     # Format 7-day forecast series
     trend_series = []
     for _, row in future_forecast.iterrows():
-        yhat = max(100.0, float(row['yhat']))
-        yhat_lower = max(50.0, float(row.get('yhat_lower', yhat * 0.94)))
+        yhat = max(10.0, float(row['yhat']))
+        yhat_lower = max(5.0, float(row.get('yhat_lower', yhat * 0.94)))
         yhat_upper = max(yhat, float(row.get('yhat_upper', yhat * 1.06)))
 
         trend_series.append({
@@ -226,7 +265,7 @@ def predict_fair_price(crop: str, mandi: str, force_retrain: bool = False) -> Di
 
     return {
         "crop": crop_clean,
-        "mandi": mandi_clean,
+        "mandi": mandi_display,
         "current_modal_price_quintal": round(current_modal_quintal, 2),
         "current_modal_price_kg": current_modal_kg,
         "fair_price_band_kg": {
@@ -247,5 +286,7 @@ def predict_fair_price(crop: str, mandi: str, force_retrain: bool = False) -> Di
             "recommendation": trend_recommendation
         },
         "model_engine": model_type,
+        "is_fallback": is_fallback,
+        "fallback_notice": fallback_notice,
         "forecast_generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }

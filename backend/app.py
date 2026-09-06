@@ -480,8 +480,9 @@ def api_mandis():
     """GET /api/mandis?commodity=X&state=Y -> distinct mandis reporting that crop."""
     commodity = request.args.get("commodity")
     state = request.args.get("state")
+    include_all = request.args.get("all", "true").lower() in ("true", "1")
     try:
-        mandis = get_distinct_mandis(commodity=commodity, state=state)
+        mandis = get_distinct_mandis(commodity=commodity, state=state, include_all=include_all)
         return jsonify({
             "success": True,
             "commodity": commodity,
