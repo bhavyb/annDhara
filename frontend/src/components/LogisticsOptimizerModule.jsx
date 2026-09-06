@@ -61,7 +61,7 @@ const PRESET_FARMER_CARDS = [
 ];
 
 export default function LogisticsOptimizerModule({ user }) {
-  const [activeSubTab, setActiveSubTab] = useState('live-orders'); // 'live-orders', 'route-opt', 'matching', 'fleet'
+  const [activeSubTab, setActiveSubTab] = useState('route-opt'); // default to 'route-opt'
 
   // Multi-Farmer & Multi-Customer Route Optimization State
   const [routeData, setRouteData] = useState(null);
@@ -74,8 +74,14 @@ export default function LogisticsOptimizerModule({ user }) {
   const [routeOtpSuccess, setRouteOtpSuccess] = useState('');
   const [verifyingStopOtp, setVerifyingStopOtp] = useState(false);
 
+  // Inline OTP state for interactive stops
+  const [inlineOtpInputs, setInlineOtpInputs] = useState({});
+  const [inlineOtpErrors, setInlineOtpErrors] = useState({});
+  const [inlineOtpSuccess, setInlineOtpSuccess] = useState({});
+  const [inlineVerifying, setInlineVerifying] = useState({});
+
   // Dynamic Route Selection State
-  const [routeMode, setRouteMode] = useState('live-db'); // 'live-db' or 'preset'
+  const [routeMode, setRouteMode] = useState('preset'); // 'preset' corridor showcase
   const [selectedRouteOrderRefs, setSelectedRouteOrderRefs] = useState([]);
   const [selectedFarmerNames, setSelectedFarmerNames] = useState([]);
   const [presetSelectedFarmers, setPresetSelectedFarmers] = useState(['Farmer A', 'Farmer C', 'Farmer B']);
@@ -226,6 +232,8 @@ export default function LogisticsOptimizerModule({ user }) {
   useEffect(() => {
     fetchFleet();
     fetchLiveDeliveries();
+    // Pre-populate AI route optimization immediately on component mount
+    fetchRouteOptimization(['Farmer A', 'Farmer C', 'Farmer B'], 'preset');
   }, []);
 
   useEffect(() => {
@@ -261,8 +269,8 @@ export default function LogisticsOptimizerModule({ user }) {
           setRouteStops(
             stops.map((s) => ({
               ...s,
-              is_verified: s.type === 'ORIGIN',
-              verified_at: s.type === 'ORIGIN' ? 'Departed from Yard' : null
+              is_verified: false,
+              verified_at: null
             }))
           );
           setCurrentOnboardKg(0);
@@ -296,6 +304,75 @@ export default function LogisticsOptimizerModule({ user }) {
     });
   };
 
+  // Direct Inline Stop Verification Handler
+  const handleSingleStopOtpVerify = async (stop, customCode = null) => {
+    const code = (customCode !== null ? customCode : (inlineOtpInputs[stop.stop_id] || '')).trim();
+    if (!code) {
+      setInlineOtpErrors((prev) => ({ ...prev, [stop.stop_id]: 'Please enter the 4-digit verification code.' }));
+      return;
+    }
+    setInlineVerifying((prev) => ({ ...prev, [stop.stop_id]: true }));
+    setInlineOtpErrors((prev) => ({ ...prev, [stop.stop_id]: '' }));
+    setInlineOtpSuccess((prev) => ({ ...prev, [stop.stop_id]: '' }));
+
+    try {
+      const res = await fetch('/api/route-optimize/verify-stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stop_id: stop.stop_id,
+          otp: code,
+          expected_otp: stop.demo_otp || '',
+          stop_type: stop.otp_type || (stop.type === 'PICKUP' ? 'pickup' : 'delivery'),
+          entity: stop.entity,
+          reference: stop.reference || ''
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        setRouteStops((prevStops) =>
+          prevStops.map((s) =>
+            s.stop_id === stop.stop_id
+              ? {
+                  ...s,
+                  is_verified: true,
+                  verified_at: nowTime
+                }
+              : s
+          )
+        );
+        if (stop.onboard_load_kg !== undefined) {
+          setCurrentOnboardKg(stop.onboard_load_kg);
+        }
+        setInlineOtpSuccess((prev) => ({ ...prev, [stop.stop_id]: data.message }));
+        fetchLiveDeliveries();
+      } else {
+        setInlineOtpErrors((prev) => ({ ...prev, [stop.stop_id]: data.error || 'Invalid OTP code.' }));
+      }
+    } catch (err) {
+      setInlineOtpErrors((prev) => ({ ...prev, [stop.stop_id]: 'Network connection error while verifying OTP.' }));
+    } finally {
+      setInlineVerifying((prev) => ({ ...prev, [stop.stop_id]: false }));
+    }
+  };
+
+  // Depart Origin Depot Handler
+  const handleDepartDepot = (stop) => {
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setRouteStops((prevStops) =>
+      prevStops.map((s) =>
+        s.stop_id === stop.stop_id
+          ? {
+              ...s,
+              is_verified: true,
+              verified_at: nowTime
+            }
+          : s
+      )
+    );
+  };
+
   const handleVerifyStopOtp = async (e) => {
     if (e) e.preventDefault();
     if (!otpModalStop || !routeOtpInput.trim()) return;
@@ -310,7 +387,8 @@ export default function LogisticsOptimizerModule({ user }) {
         body: JSON.stringify({
           stop_id: otpModalStop.stop_id,
           otp: routeOtpInput.trim(),
-          stop_type: otpModalStop.otp_type,
+          expected_otp: otpModalStop.demo_otp || '',
+          stop_type: otpModalStop.otp_type || (otpModalStop.type === 'PICKUP' ? 'pickup' : 'delivery'),
           entity: otpModalStop.entity,
           reference: otpModalStop.reference || ''
         })
@@ -318,18 +396,21 @@ export default function LogisticsOptimizerModule({ user }) {
       const data = await res.json();
       if (data.success) {
         setRouteOtpSuccess(data.message);
+        const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         setRouteStops((prevStops) =>
           prevStops.map((s) =>
             s.stop_id === otpModalStop.stop_id
               ? {
                   ...s,
                   is_verified: true,
-                  verified_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  verified_at: nowTime
                 }
               : s
           )
         );
-        setCurrentOnboardKg(otpModalStop.onboard_load_kg);
+        if (otpModalStop.onboard_load_kg !== undefined) {
+          setCurrentOnboardKg(otpModalStop.onboard_load_kg);
+        }
         fetchLiveDeliveries();
         setTimeout(() => {
           setOtpModalStop(null);
@@ -352,8 +433,8 @@ export default function LogisticsOptimizerModule({ user }) {
       setRouteStops(
         stops.map((s) => ({
           ...s,
-          is_verified: s.type === 'ORIGIN',
-          verified_at: s.type === 'ORIGIN' ? 'Departed from Yard' : null
+          is_verified: false,
+          verified_at: null
         }))
       );
       setCurrentOnboardKg(0);
@@ -361,6 +442,9 @@ export default function LogisticsOptimizerModule({ user }) {
       setRouteOtpInput('');
       setRouteOtpError('');
       setRouteOtpSuccess('');
+      setInlineOtpInputs({});
+      setInlineOtpErrors({});
+      setInlineOtpSuccess({});
     } else {
       fetchRouteOptimization(routeMode === 'preset' ? presetSelectedFarmers : selectedFarmerNames);
     }
@@ -369,7 +453,15 @@ export default function LogisticsOptimizerModule({ user }) {
   useEffect(() => {
     if (activeSubTab === 'route-opt') {
       if (routeMode === 'live-db') {
-        fetchRouteOptimization(selectedFarmerNames, 'live');
+        if (selectedFarmerNames.length > 0) {
+          fetchRouteOptimization(selectedFarmerNames, 'live');
+        } else if (farmersWithOrders.length > 0) {
+          const topF = farmersWithOrders.slice(0, 2).map((f) => f.farmer_name);
+          setSelectedFarmerNames(topF);
+          fetchRouteOptimization(topF, 'live');
+        } else {
+          fetchRouteOptimization(presetSelectedFarmers, 'preset');
+        }
       } else {
         fetchRouteOptimization(presetSelectedFarmers, 'preset');
       }
@@ -482,6 +574,26 @@ export default function LogisticsOptimizerModule({ user }) {
           }}
         >
           <button
+            onClick={() => setActiveSubTab('route-opt')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeSubTab === 'route-opt' ? 'white' : 'transparent',
+              color: activeSubTab === 'route-opt' ? '#059669' : 'var(--color-text-secondary)',
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              boxShadow: activeSubTab === 'route-opt' ? 'var(--shadow-sm)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Navigation size={15} color="#059669" /> 🗺️ AI Route Optimization & OTP
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('live-orders')}
             style={{
               padding: '8px 14px',
@@ -499,26 +611,6 @@ export default function LogisticsOptimizerModule({ user }) {
             }}
           >
             <Truck size={15} color="#7C3AED" /> ⚡ Live Orders & Dispatch
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('route-opt')}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeSubTab === 'route-opt' ? 'white' : 'transparent',
-              color: activeSubTab === 'route-opt' ? 'var(--color-soil-dark)' : 'var(--color-text-secondary)',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
-              boxShadow: activeSubTab === 'route-opt' ? 'var(--shadow-sm)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Navigation size={15} color="#059669" /> AI Route Optimization
           </button>
 
           <button
@@ -1005,26 +1097,98 @@ export default function LogisticsOptimizerModule({ user }) {
               gap: '16px'
             }}
           >
+            {/* Completion Banner when all stops are verified */}
+            {routeStops.length > 0 && routeStops.every((s) => s.is_verified) && (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+                  border: '2px solid #10B981',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '22px 24px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '16px',
+                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.16)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: '#059669',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      flexShrink: 0
+                    }}
+                  >
+                    🎉
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Corridor Mission Authenticated & Complete
+                    </div>
+                    <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#064E3B', margin: '2px 0 4px 0' }}>
+                      All Multi-Farm Pickups & Buyer Deliveries Authenticated!
+                    </h4>
+                    <div style={{ fontSize: '0.8rem', color: '#047857' }}>
+                      Two-sided OTP verified across 3 farmgates & 2 customer doorsteps • ₹{routeData?.metrics?.cost_saved_inr || '1,368'} saved • {routeData?.metrics?.co2_saved_kg || '36.5'} kg CO₂ prevented.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleResetRoute}
+                  style={{
+                    background: 'white',
+                    borderColor: '#10B981',
+                    color: '#047857',
+                    fontWeight: 800,
+                    padding: '10px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  <RotateCcw size={15} /> Replay / Reset Route Simulation
+                </button>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div>
                 <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-soil-dark)', margin: 0 }}>
                   Optimized Stop Sequence & Two-Sided Verification
                 </h4>
                 <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
-                  Driver must collect and input the unique 4-digit OTP at each farmer farmgate and buyer facility to proceed.
+                  Driver verifies the unique 4-digit PIN directly with each farmer at pickup and buyer at delivery.
                 </div>
               </div>
 
-              <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 10px', borderRadius: '12px' }}>
-                {routeStops.filter((s) => s.is_verified).length} of {routeStops.length} Milestones Verified
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '4px 12px', borderRadius: '12px' }}>
+                  {routeStops.filter((s) => s.is_verified).length} of {routeStops.length} Milestones Verified
+                </span>
+              </div>
             </div>
 
-            {/* Interactive Leaflet Route Map */}
+            {/* Interactive Leaflet Route Map with verified stops reactively passed */}
             {routeData && (
               <div style={{ marginBottom: '14px' }}>
                 <RouteMap
-                  routeData={routeData}
+                  routeData={{
+                    ...routeData,
+                    route_sequence: routeStops,
+                    route_stops: routeStops
+                  }}
                   height="420px"
                   title="Live Multi-Stop Shared Logistics GPS Route & Driving Path"
                   showSummaryHeader={true}
@@ -1033,159 +1197,364 @@ export default function LogisticsOptimizerModule({ user }) {
             )}
 
             {/* Stops Timeline List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {routeStops.map((stop, idx) => {
-                const isOrigin = stop.type === 'ORIGIN';
-                const isPickup = stop.type === 'PICKUP';
-                const isDelivery = stop.type === 'DELIVERY';
-                const isVerified = stop.is_verified;
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {(() => {
+                const allDone = routeStops.length > 0 && routeStops.every((s) => s.is_verified);
+                const firstPendingIdx = routeStops.findIndex((s) => !s.is_verified);
 
-                return (
-                  <div
-                    key={stop.stop_id}
-                    style={{
-                      border: `1.5px solid ${isVerified ? '#A7F3D0' : isPickup ? '#BAE6FD' : '#DDD6FE'}`,
-                      background: isVerified ? '#F0FDF4' : 'white',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '16px 20px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '14px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', maxWidth: '650px' }}>
-                      {/* Step Number Circle */}
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          background: isVerified ? '#059669' : isPickup ? '#0284C7' : '#7C3AED',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800,
-                          fontSize: '0.85rem',
-                          flexShrink: 0
-                        }}
-                      >
-                        {isVerified ? <Check size={18} /> : stop.step}
-                      </div>
+                return routeStops.map((stop, idx) => {
+                  const isOrigin = stop.type === 'ORIGIN';
+                  const isPickup = stop.type === 'PICKUP';
+                  const isDelivery = stop.type === 'DELIVERY';
+                  const isVerified = stop.is_verified;
+                  const isCurrentActive = !allDone && idx === firstPendingIdx;
 
-                      {/* Stop Info */}
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span
-                            style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 800,
-                              textTransform: 'uppercase',
-                              color: isOrigin ? '#6B7280' : isPickup ? '#0369A1' : '#6D28D9',
-                              background: isOrigin ? '#F3F4F6' : isPickup ? '#E0F2FE' : '#EDE9FE',
-                              padding: '2px 8px',
-                              borderRadius: '4px'
-                            }}
-                          >
-                            {isOrigin ? 'Origin Depot' : isPickup ? '🌾 Farmer Farmgate Pickup' : '🛒 Customer Doorstep Delivery'}
-                          </span>
-
-                          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                            +{stop.distance_leg_km} km leg ({stop.cumulative_distance_km} km total)
-                          </span>
-                        </div>
-
-                        <h5 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-soil-dark)', margin: '4px 0 2px 0' }}>
-                          {stop.entity}
-                        </h5>
-
-                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <MapPin size={13} color="var(--color-crop)" /> {stop.location}
-                        </div>
-
-                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: isVerified ? '#047857' : 'var(--color-soil-dark)', marginTop: '4px' }}>
-                          {stop.action}
-                        </div>
-
-                        {isPickup && stop.target_customers && (
-                          <div style={{ fontSize: '0.74rem', color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '3px 8px', borderRadius: '6px', marginTop: '4px', display: 'inline-block' }}>
-                            🛒 <strong>Target Doorstep Customers:</strong> {stop.target_customers}
-                          </div>
-                        )}
-
-                        {isDelivery && stop.from_farmer && (
-                          <div style={{ fontSize: '0.74rem', color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '6px', marginTop: '4px', display: 'inline-block' }}>
-                            🌾 <strong>Harvest Source:</strong> Ordered exclusively from <strong>{stop.from_farmer}</strong>
-                          </div>
-                        )}
-
-                        <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                          📦 Cargo onboard: {stop.cargo_breakdown}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Verification Actions */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                      {isVerified ? (
+                  return (
+                    <div
+                      key={stop.stop_id}
+                      style={{
+                        border: isVerified
+                          ? '1.5px solid #10B981'
+                          : isCurrentActive
+                          ? '2px solid #2563EB'
+                          : `1px solid var(--color-border)`,
+                        background: isVerified ? '#F0FDF4' : isCurrentActive ? '#FAFCFF' : 'white',
+                        boxShadow: isCurrentActive
+                          ? '0 0 0 3px rgba(37, 99, 235, 0.12), 0 4px 16px rgba(0,0,0,0.06)'
+                          : 'var(--shadow-sm)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '18px 20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {/* Active Waypoint Pill */}
+                      {isCurrentActive && (
                         <div
                           style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            fontSize: '0.78rem',
+                            background: '#EFF6FF',
+                            color: '#1D4ED8',
+                            border: '1px solid #BFDBFE',
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem',
                             fontWeight: 800,
-                            color: '#047857',
-                            background: '#ECFDF5',
-                            border: '1px solid #A7F3D0',
-                            padding: '6px 14px',
-                            borderRadius: '8px'
+                            alignSelf: 'flex-start'
                           }}
                         >
-                          <CheckCircle2 size={16} />
-                          {isOrigin ? 'Vehicle Departed' : 'OTP Verified by Driver'}
+                          <Truck size={13} /> 👉 CURRENT ACTIVE DESTINATION — DRIVER EN ROUTE HERE
                         </div>
-                      ) : (
-                        <button
-                          className="btn-primary"
-                          onClick={() => {
-                            setOtpModalStop(stop);
-                            setRouteOtpInput('');
-                            setRouteOtpError('');
-                            setRouteOtpSuccess('');
-                          }}
-                          style={{
-                            padding: '8px 16px',
-                            fontSize: '0.82rem',
-                            fontWeight: 800,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: isPickup ? '#0284C7' : '#7C3AED',
-                            borderColor: isPickup ? '#0284C7' : '#7C3AED'
-                          }}
-                        >
-                          <KeyRound size={15} />
-                          {isPickup ? "Enter Farmer's Pickup OTP" : "Enter Buyer's Delivery OTP"}
-                        </button>
                       )}
 
-                      {!isOrigin && (
-                        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
-                          {isVerified ? `Verified at ${stop.verified_at}` : `Contact: ${stop.phone}`}
-                        </span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: '280px' }}>
+                          {/* Step Number Circle */}
+                          <div
+                            style={{
+                              width: '38px',
+                              height: '38px',
+                              borderRadius: '50%',
+                              background: isVerified
+                                ? '#059669'
+                                : isCurrentActive
+                                ? '#2563EB'
+                                : isPickup
+                                ? '#0284C7'
+                                : isDelivery
+                                ? '#7C3AED'
+                                : '#6B7280',
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 800,
+                              fontSize: '0.85rem',
+                              flexShrink: 0,
+                              boxShadow: isCurrentActive ? '0 0 10px rgba(37, 99, 235, 0.4)' : 'none'
+                            }}
+                          >
+                            {isVerified ? <Check size={20} /> : stop.step}
+                          </div>
+
+                          {/* Stop Info */}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                  color: isOrigin ? '#4B5563' : isPickup ? '#0369A1' : '#6D28D9',
+                                  background: isOrigin ? '#F3F4F6' : isPickup ? '#E0F2FE' : '#EDE9FE',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                {isOrigin ? '🏢 Central Fleet Depot' : isPickup ? '🌾 Farmer Farmgate Pickup' : '🛒 Buyer Doorstep Delivery'}
+                              </span>
+
+                              <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                                +{stop.distance_leg_km} km leg ({stop.cumulative_distance_km} km cumulative)
+                              </span>
+                            </div>
+
+                            <h5 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-soil-dark)', margin: '4px 0 2px 0' }}>
+                              {stop.entity}
+                            </h5>
+
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <MapPin size={13} color="var(--color-crop)" /> {stop.location}
+                            </div>
+
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: isVerified ? '#047857' : 'var(--color-soil-dark)', marginTop: '4px' }}>
+                              {stop.action}
+                            </div>
+
+                            {isPickup && stop.target_customers && (
+                              <div style={{ fontSize: '0.74rem', color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '3px 8px', borderRadius: '6px', marginTop: '4px', display: 'inline-block' }}>
+                                🛒 <strong>Target Doorstep Customers:</strong> {stop.target_customers}
+                              </div>
+                            )}
+
+                            {isDelivery && stop.from_farmer && (
+                              <div style={{ fontSize: '0.74rem', color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '6px', marginTop: '4px', display: 'inline-block' }}>
+                                🌾 <strong>Harvest Source:</strong> Ordered exclusively from <strong>{stop.from_farmer}</strong>
+                              </div>
+                            )}
+
+                            <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginTop: '3px' }}>
+                              📦 Vehicle onboard cargo: <strong>{stop.cargo_breakdown}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Top-Right Status / Depot Action */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                          {isVerified ? (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 800,
+                                color: '#047857',
+                                background: '#ECFDF5',
+                                border: '1.5px solid #10B981',
+                                padding: '6px 14px',
+                                borderRadius: '8px'
+                              }}
+                            >
+                              <CheckCircle2 size={16} />
+                              {isOrigin ? 'Vehicle Departed' : 'OTP Verified by Driver'}
+                            </div>
+                          ) : isOrigin ? (
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              onClick={() => handleDepartDepot(stop)}
+                              style={{
+                                padding: '9px 18px',
+                                fontSize: '0.82rem',
+                                fontWeight: 800,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '7px',
+                                background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                                border: 'none',
+                                boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Truck size={15} />
+                              🚀 Start Route & Depart Depot
+                            </button>
+                          ) : null}
+
+                          {isVerified && stop.verified_at && (
+                            <span style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 600 }}>
+                              Authenticated at {stop.verified_at}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* INLINE OTP VERIFICATION CONSOLE (For Farmer Pickup & Buyer Delivery) */}
+                      {!isOrigin && !isVerified && (
+                        <div
+                          style={{
+                            background: isPickup ? '#F0F9FF' : '#F5F3FF',
+                            border: `1.5px solid ${isPickup ? '#BAE6FD' : '#DDD6FE'}`,
+                            borderRadius: '10px',
+                            padding: '14px 16px',
+                            marginTop: '6px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 800, color: isPickup ? '#0369A1' : '#6D28D9' }}>
+                              <KeyRound size={15} />
+                              {isPickup
+                                ? `Farmer Handover Verification — Collect PIN from ${stop.entity}`
+                                : `Buyer Delivery Verification — Collect PIN from ${stop.entity}`}
+                            </div>
+
+                            {/* 1-Click Demo OTP Autofill & Verify */}
+                            {stop.demo_otp && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInlineOtpInputs((prev) => ({ ...prev, [stop.stop_id]: stop.demo_otp }));
+                                  handleSingleStopOtpVerify(stop, stop.demo_otp);
+                                }}
+                                title="Click to instantly fill and verify this stop's security OTP"
+                                style={{
+                                  background: isPickup ? '#E0F2FE' : '#EDE9FE',
+                                  border: `1.5px solid ${isPickup ? '#7DD3FC' : '#C4B5FD'}`,
+                                  color: isPickup ? '#0369A1' : '#6D28D9',
+                                  borderRadius: '6px',
+                                  padding: '4px 12px',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  boxShadow: 'var(--shadow-sm)',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <span>💡 Demo PIN:</span>
+                                <strong style={{ fontFamily: 'monospace', letterSpacing: '1px', fontSize: '0.9rem' }}>{stop.demo_otp}</strong>
+                                <span style={{ fontSize: '0.72rem', textDecoration: 'underline' }}>(⚡ Autofill & Verify)</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* OTP Input & Submission Controls */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--color-soil-dark)' }}>
+                                Enter 4-Digit Code:
+                              </span>
+                              <input
+                                type="text"
+                                maxLength={4}
+                                placeholder="e.g. 4821"
+                                value={inlineOtpInputs[stop.stop_id] || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '');
+                                  setInlineOtpInputs((prev) => ({ ...prev, [stop.stop_id]: val }));
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleSingleStopOtpVerify(stop);
+                                  }
+                                }}
+                                style={{
+                                  width: '120px',
+                                  padding: '7px 10px',
+                                  borderRadius: '6px',
+                                  border: `1.5px solid ${isPickup ? '#93C5FD' : '#C4B5FD'}`,
+                                  fontSize: '1.15rem',
+                                  fontWeight: 900,
+                                  fontFamily: 'monospace',
+                                  textAlign: 'center',
+                                  letterSpacing: '4px',
+                                  background: 'white'
+                                }}
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={inlineVerifying[stop.stop_id]}
+                              onClick={() => handleSingleStopOtpVerify(stop)}
+                              style={{
+                                padding: '8px 18px',
+                                fontSize: '0.82rem',
+                                fontWeight: 800,
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: isPickup ? '#0284C7' : '#7C3AED',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: 'var(--shadow-sm)'
+                              }}
+                            >
+                              <Check size={15} />
+                              {inlineVerifying[stop.stop_id]
+                                ? 'Validating PIN...'
+                                : isPickup
+                                ? 'Verify & Load Produce'
+                                : 'Verify & Handover to Buyer'}
+                            </button>
+
+                            {stop.phone && (
+                              <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>
+                                📞 Contact: <a href={`tel:${stop.phone}`} style={{ color: 'inherit', fontWeight: 600 }}>{stop.phone}</a>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Error & Success Feedback */}
+                          {inlineOtpErrors[stop.stop_id] && (
+                            <div
+                              style={{
+                                fontSize: '0.78rem',
+                                color: '#DC2626',
+                                background: '#FEF2F2',
+                                border: '1px solid #FECACA',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <AlertTriangle size={14} /> {inlineOtpErrors[stop.stop_id]}
+                            </div>
+                          )}
+
+                          {inlineOtpSuccess[stop.stop_id] && (
+                            <div
+                              style={{
+                                fontSize: '0.78rem',
+                                color: '#047857',
+                                background: '#ECFDF5',
+                                border: '1px solid #A7F3D0',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <CheckCircle2 size={14} /> {inlineOtpSuccess[stop.stop_id]}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </div>
 
-          {/* OTP VERIFICATION MODAL */}
+          {/* FALLBACK / POPUP OTP MODAL (Also with Demo PIN autofill) */}
           {otpModalStop && (
             <div className="modal-overlay" onClick={() => setOtpModalStop(null)}>
               <div
@@ -1220,6 +1589,27 @@ export default function LogisticsOptimizerModule({ user }) {
                         : `Please collect the 4-digit Doorstep Delivery OTP from ${otpModalStop.entity} upon safe handover of the produce.`}
                     </div>
                   </div>
+
+                  {otpModalStop.demo_otp && (
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => setRouteOtpInput(otpModalStop.demo_otp)}
+                        style={{
+                          background: '#EFF6FF',
+                          border: '1px dashed #3B82F6',
+                          color: '#1D4ED8',
+                          borderRadius: '6px',
+                          padding: '4px 12px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        💡 Autofill Demo PIN: <strong>{otpModalStop.demo_otp}</strong>
+                      </button>
+                    </div>
+                  )}
 
                   <div className="form-group">
                     <label className="form-label" style={{ fontWeight: 800 }}>

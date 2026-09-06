@@ -21,18 +21,20 @@ function createCustomIcon(type, number, isVerified) {
   let badgeText = number || '1';
   let iconSvg = '';
 
-  if (type === 'ORIGIN') {
+  if (isVerified) {
+    bgColor = '#059669';
+  } else if (type === 'ORIGIN') {
     bgColor = '#4F46E5'; // Indigo
     iconSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="1" y="3" width="15" height="13"></rect>
-        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+        <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
         <circle cx="5.5" cy="18.5" r="2.5"></circle>
         <circle cx="18.5" cy="18.5" r="2.5"></circle>
       </svg>
     `;
   } else if (type === 'PICKUP') {
-    bgColor = isVerified ? '#15803D' : '#16A34A'; // Emerald Green
+    bgColor = '#16A34A'; // Emerald Green
     iconSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M7 20h10"></path>
@@ -42,7 +44,7 @@ function createCustomIcon(type, number, isVerified) {
       </svg>
     `;
   } else {
-    bgColor = isVerified ? '#15803D' : '#EA580C'; // Amber / Orange
+    bgColor = '#EA580C'; // Amber / Orange
     iconSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
@@ -72,7 +74,7 @@ function createCustomIcon(type, number, isVerified) {
         position: absolute;
         top: -6px;
         right: -6px;
-        background: #111827;
+        background: ${isVerified ? '#047857' : '#111827'};
         color: white;
         font-size: 10px;
         font-weight: 800;
@@ -83,7 +85,7 @@ function createCustomIcon(type, number, isVerified) {
         justify-content: center;
         border-radius: 50%;
         border: 2px solid white;
-      ">${badgeText}</span>
+      ">${isVerified ? '✓' : badgeText}</span>
       ${type === 'ORIGIN' ? `
         <span style="
           position: absolute;
@@ -178,7 +180,7 @@ export default function RouteMap({
 
     validStops.forEach((stop, idx) => {
       const stepNumber = stop.step || idx + 1;
-      const isVerified = Boolean(stop.otp_verified);
+      const isVerified = Boolean(stop.otp_verified || stop.is_verified);
       const icon = createCustomIcon(stop.type, stepNumber, isVerified);
 
       const marker = L.marker([stop.lat, stop.lng], { icon });
