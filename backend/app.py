@@ -163,6 +163,12 @@ def api_deliveries():
     try:
         qty = payload.get("quantity_kg", payload.get("quantity", 0))
         dest = payload.get("destination", payload.get("delivery_location", ""))
+        buyer_uid = payload.get("buyer_user_id") or payload.get("user_id")
+        if buyer_uid is not None:
+            try:
+                buyer_uid = int(buyer_uid)
+            except (ValueError, TypeError):
+                buyer_uid = None
         assignment = create_delivery_assignment(
             crop=payload.get("crop", ""),
             quantity_kg=float(qty),
@@ -174,7 +180,9 @@ def api_deliveries():
             demand_id=int(payload["demand_id"]) if payload.get("demand_id") is not None else None,
             current_location=payload.get("current_location", ""),
             vehicle_number=payload.get("vehicle_number", ""),
-            eta=payload.get("eta", "")
+            eta=payload.get("eta", ""),
+            buyer_user_id=buyer_uid,
+            buyer_phone=str(payload.get("buyer_phone") or payload.get("phone", ""))
         )
         if assignment and "reference" in assignment:
             assignment["tracking_reference"] = assignment["reference"]
@@ -632,6 +640,13 @@ def api_listings():
                 return jsonify({"success": False, "error": f"Missing required field: '{f}'"}), 400
 
         try:
+            uid_val = payload.get("user_id") or payload.get("farmer_id")
+            if uid_val is not None:
+                try:
+                    uid_val = int(uid_val)
+                except (ValueError, TypeError):
+                    uid_val = None
+
             listing = create_listing(
                 farmer_name=payload["farmer_name"],
                 phone=payload["phone"],
@@ -649,7 +664,8 @@ def api_listings():
                 harvest_date=payload.get("harvest_date", ""),
                 min_price_kg=float(payload.get("min_price_kg", 0.0)),
                 sellability_score=int(payload.get("sellability_score", 85)),
-                shelf_life_days=int(payload.get("shelf_life_days", 6))
+                shelf_life_days=int(payload.get("shelf_life_days", 6)),
+                user_id=uid_val
             )
             return jsonify({
                 "success": True,

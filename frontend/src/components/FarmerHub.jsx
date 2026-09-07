@@ -137,6 +137,12 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
 
   const displayedListings = listings.filter((item) => {
     if (listingsFilter === 'all') return true;
+    try {
+      const localOwnedIds = JSON.parse(localStorage.getItem('my_farmer_listing_ids') || '[]');
+      if (localOwnedIds.includes(item.id)) return true;
+    } catch (e) {}
+    if (user?.id && item.user_id && Number(user.id) === Number(item.user_id)) return true;
+
     const farmerName = (user?.name || formData.farmer_name || '').toLowerCase();
     const phone = (user?.phone || formData.phone || '').replace(/[^0-9]/g, '');
     const itemPhone = (item.phone || '').replace(/[^0-9]/g, '');
@@ -160,7 +166,8 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
       min_price_kg: Number(formData.min_price_kg),
       sellability_score: sellabilityData?.sellability_score || 85,
       fair_price_min: fairRef?.fair_price_band_kg?.min || 0,
-      fair_price_max: fairRef?.fair_price_band_kg?.max || 0
+      fair_price_max: fairRef?.fair_price_band_kg?.max || 0,
+      user_id: user?.id || null
     };
 
     try {
@@ -171,6 +178,16 @@ export default function FarmerHub({ user, commodities = [], locationsData = { st
       });
       const data = await res.json();
       if (data.success) {
+        if (data.listing?.id) {
+          try {
+            const existingIds = JSON.parse(localStorage.getItem('my_farmer_listing_ids') || '[]');
+            if (!existingIds.includes(data.listing.id)) {
+              localStorage.setItem('my_farmer_listing_ids', JSON.stringify([...existingIds, data.listing.id]));
+            }
+          } catch (e) {
+            console.error('Storage error:', e);
+          }
+        }
         setSubmitSuccess('Harvest successfully registered and matched with AI demand signals!');
         setShowAddModal(false);
         loadFarmerListings();

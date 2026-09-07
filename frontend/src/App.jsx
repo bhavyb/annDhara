@@ -298,7 +298,7 @@ function AppContent() {
 
             {/* 3. Buyer & Community Marketplace */}
             {activeTab === 'marketplace' && (
-              <MarketplaceModule user={user} commodities={commodities} locationsData={locationsData} />
+              <MarketplaceModule user={user} commodities={commodities} locationsData={locationsData} onNavigate={(target) => setActiveTab(target)} />
             )}
 
             {/* 4. Demand Forecasting & Regional Heatmap */}

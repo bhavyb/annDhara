@@ -11,6 +11,7 @@ Provides persistent SQLite storage for:
 import logging
 import os
 import random
+import re
 import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -61,6 +62,7 @@ def init_db():
                 sellability_score INTEGER DEFAULT 85,
                 shelf_life_days INTEGER DEFAULT 6,
                 qr_code_id TEXT DEFAULT '',
+                user_id INTEGER DEFAULT NULL,
                 created_at TEXT NOT NULL
             )
         """)
@@ -80,6 +82,8 @@ def init_db():
             cursor.execute("ALTER TABLE listings ADD COLUMN shelf_life_days INTEGER DEFAULT 6")
         if "qr_code_id" not in columns:
             cursor.execute("ALTER TABLE listings ADD COLUMN qr_code_id TEXT DEFAULT ''")
+        if "user_id" not in columns:
+            cursor.execute("ALTER TABLE listings ADD COLUMN user_id INTEGER DEFAULT NULL")
 
         # 2. Bulk Buyer Requisitions
         cursor.execute("""
@@ -233,7 +237,8 @@ def create_listing(
     harvest_date: str = "",
     min_price_kg: float = 0.0,
     sellability_score: int = 85,
-    shelf_life_days: int = 6
+    shelf_life_days: int = 6,
+    user_id: Optional[int] = None
 ) -> Dict[str, Any]:
     """Inserts a new listing into SQLite and returns the created record."""
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -246,8 +251,8 @@ def create_listing(
                 farmer_name, phone, crop, variety, quantity_kg, asking_price_kg,
                 location, state, mandi_reference, fair_price_min, fair_price_max,
                 notes, status, is_pre_harvest, harvest_date, min_price_kg,
-                sellability_score, shelf_life_days, qr_code_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)
+                sellability_score, shelf_life_days, qr_code_id, user_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             clean_text(farmer_name),
             str(phone).strip(),
@@ -267,6 +272,7 @@ def create_listing(
             int(sellability_score),
             int(shelf_life_days),
             qr_id,
+            int(user_id) if user_id is not None else None,
             created_at
         ))
         conn.commit()
@@ -803,6 +809,8 @@ def create_delivery_assignment(
     current_location: str = "",
     vehicle_number: str = "",
     eta: str = "",
+    buyer_user_id: Optional[int] = None,
+    buyer_phone: str = ""
 ) -> Dict[str, Any]:
     """Create a durable assignment shared by the three stakeholder portals with live location tracking.
     Automatically checks and deducts produce inventory from the farmer's listing in the database.
@@ -845,6 +853,29 @@ def create_delivery_assignment(
         remaining_lot_val = None
 
         if target_listing:
+            # Prevent farmer from buying their own crop lot
+            target_farmer_name = (target_listing["farmer_name"] or "").strip().lower()
+            clean_buyer_name = (buyer_name or "").strip().lower()
+            target_phone = re.sub(r"\D", "", target_listing["phone"] or "")
+            clean_b_phone = re.sub(r"\D", "", buyer_phone or "")
+
+            is_self_purchase = False
+            if target_farmer_name and clean_buyer_name and target_farmer_name == clean_buyer_name:
+                is_self_purchase = True
+            elif target_phone and clean_b_phone and len(target_phone) >= 7 and (
+                target_phone == clean_b_phone or target_phone.endswith(clean_b_phone[-10:]) or clean_b_phone.endswith(target_phone[-10:])
+            ):
+                is_self_purchase = True
+            elif (
+                buyer_user_id is not None
+                and target_listing["user_id"] is not None
+                and int(buyer_user_id) == int(target_listing["user_id"])
+            ):
+                is_self_purchase = True
+
+            if is_self_purchase:
+                raise ValueError("Farmers cannot purchase their own produce listing / ખેડૂત પોતાનો જ પાક ખરીદી શકતા નથી.")
+
             curr_qty = float(target_listing["quantity_kg"])
             curr_status = target_listing["status"]
             asking_price = float(target_listing["asking_price_kg"] or 0.0)

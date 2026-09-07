@@ -23,14 +23,15 @@ import {
   RefreshCw,
   Truck,
   ArrowRight,
-  Check
+  Check,
+  Sprout
 } from 'lucide-react';
 import { getCropDisplayName, getCropGujaratiOnly } from '../utils/cropTranslations';
 import { getCropImage } from '../utils/cropImages';
 import DeliveryStatusPanel from './DeliveryStatusPanel.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
-export default function MarketplaceModule({ user, commodities = [], locationsData = { states: [], districts: [], markets: [] } }) {
+export default function MarketplaceModule({ user, commodities = [], locationsData = { states: [], districts: [], markets: [] }, onNavigate }) {
   const { t } = useLanguage();
   const [marketSubTab, setMarketSubTab] = useState('direct'); // 'direct', 'bulk', 'community', 'deliveries'
   const [listings, setListings] = useState([]);
@@ -38,6 +39,43 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
   const [filterCrop, setFilterCrop] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [selectedRegionDropdown, setSelectedRegionDropdown] = useState('');
+
+  // Identify whether a produce lot belongs to the logged-in farmer
+  const isOwnListing = (listing) => {
+    if (!listing) return false;
+
+    // Check newly registered lots in local storage
+    try {
+      const storedIds = JSON.parse(localStorage.getItem('my_farmer_listing_ids') || '[]');
+      if (storedIds.includes(listing.id)) return true;
+    } catch (e) {}
+
+    if (!user) return false;
+
+    // If logged in as farmer
+    if (user.role === 'farmer') {
+      if (user.id && listing.user_id && Number(user.id) === Number(listing.user_id)) {
+        return true;
+      }
+      const uPhone = (user.phone || '').replace(/\D/g, '');
+      const lPhone = (listing.phone || '').replace(/\D/g, '');
+      if (uPhone.length >= 7 && lPhone.length >= 7) {
+        if (uPhone === lPhone || uPhone.endsWith(lPhone.slice(-10)) || lPhone.endsWith(uPhone.slice(-10))) {
+          return true;
+        }
+      }
+      const uName = (user.name || '').trim().toLowerCase();
+      const lName = (listing.farmer_name || '').trim().toLowerCase();
+      if (uName && lName && (uName === lName || lName.includes(uName) || uName.includes(lName))) {
+        return true;
+      }
+      const uOrg = (user.organization || '').trim().toLowerCase();
+      if (uOrg && lName && (uOrg === lName || lName.includes(uOrg) || uOrg.includes(lName))) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   // Buyer Order & Delivery Booking state
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -157,6 +195,10 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
   }, [user]);
 
   const handleOpenOrderModal = (listing) => {
+    if (isOwnListing(listing)) {
+      alert(t('cannotBuyOwnListing', 'Farmers cannot purchase their own produce lots'));
+      return;
+    }
     setOrderListing(listing);
     setOrderFormData((prev) => ({
       ...prev,
@@ -171,6 +213,10 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
   const handleConfirmOrder = async (e) => {
     e.preventDefault();
     if (!orderListing) return;
+    if (isOwnListing(orderListing)) {
+      setOrderError(t('cannotBuyOwnListing', 'Farmers cannot purchase their own produce lots'));
+      return;
+    }
     setOrderSubmitting(true);
     setOrderError(null);
 
@@ -179,6 +225,8 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
       quantity_kg: Number(orderFormData.quantity_kg),
       farmer_name: orderListing.farmer_name,
       buyer_name: orderFormData.buyer_name || 'Verified Buyer',
+      buyer_user_id: user?.id || null,
+      buyer_phone: orderFormData.phone || user?.phone || '',
       pickup_location: orderListing.location,
       destination: orderFormData.delivery_location,
       listing_id: orderListing.id,
@@ -468,9 +516,10 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                   `Namaste ${l.farmer_name}, I saw your ${l.crop} listing on AnnDhara.`
                 )}`;
                 const isPre = l.is_pre_harvest === 1;
+                const isOwn = isOwnListing(l);
 
                 return (
-                  <div key={l.id} className="produce-card">
+                  <div key={l.id} className="produce-card" style={isOwn ? { border: '2px solid #F59E0B' } : {}}>
                     {/* Visual Media Header with Real Crop Photo */}
                     <div className="produce-card-media">
                       <img
@@ -497,6 +546,31 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
                       <span className="produce-card-badge-top-right">
                         {`LOT-#${l.id.toString().padStart(4, '0')}`}
                       </span>
+
+                      {isOwn && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: '10px',
+                            left: '10px',
+                            background: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
+                            color: '#FFFFFF',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                            backdropFilter: 'blur(4px)',
+                            zIndex: 2,
+                            border: '1px solid rgba(255,255,255,0.3)'
+                          }}
+                        >
+                          <Sparkles size={12} /> {t('ownProduceBadge', 'Your Produce Lot')}
+                        </span>
+                      )}
 
                       <div className="produce-card-price-overlay">
                         ₹{l.asking_price_kg.toFixed(2)}
@@ -567,37 +641,111 @@ export default function MarketplaceModule({ user, commodities = [], locationsDat
 
                       {/* Action Bar */}
                       <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <button
-                          className="btn-primary"
-                          onClick={() => handleOpenOrderModal(l)}
-                          style={{
-                            width: '100%',
-                            padding: '9px 12px',
-                            fontSize: '0.84rem'
-                          }}
-                        >
-                          <Truck size={15} /> {t('buyAndBookDelivery')}
-                        </button>
+                        {isOwn ? (
+                          <>
+                            <div
+                              style={{
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                border: '1px solid #FCD34D',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '8px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                color: '#92400E',
+                                fontSize: '0.78rem',
+                                fontWeight: 600
+                              }}
+                            >
+                              <AlertCircle size={16} style={{ flexShrink: 0, color: '#D97706' }} />
+                              <span>{t('ownListingNotice', 'Your Listing (Self-Purchase Restricted)')}</span>
+                            </div>
 
-                        <a
-                          href={waUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn-secondary"
-                          style={{
-                            width: '100%',
-                            padding: '7px 10px',
-                            fontSize: '0.78rem',
-                            color: '#15803D',
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          <MessageCircle size={14} /> Contact Farmer via WhatsApp
-                        </a>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              disabled
+                              style={{
+                                width: '100%',
+                                padding: '9px 12px',
+                                fontSize: '0.84rem',
+                                opacity: 0.65,
+                                cursor: 'not-allowed',
+                                background: '#F1F5F9',
+                                color: '#64748B',
+                                borderColor: '#CBD5E1',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px'
+                              }}
+                              title={t('cannotBuyOwnListing', 'Farmers cannot purchase their own produce lots')}
+                            >
+                              <ShieldCheck size={15} /> {t('cannotBuyOwnProduce', 'Cannot Buy Own Crop')}
+                            </button>
+
+                            {onNavigate ? (
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => onNavigate('farmer-hub')}
+                                style={{
+                                  width: '100%',
+                                  padding: '7px 10px',
+                                  fontSize: '0.78rem',
+                                  color: 'var(--color-crop)',
+                                  borderColor: 'var(--color-crop-border)',
+                                  background: 'var(--color-crop-light)',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <Sprout size={14} /> {t('manageInFarmerHub', 'Manage in Farmer & FPO Hub')}
+                              </button>
+                            ) : (
+                              <div style={{ textAlign: 'center', fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+                                {t('cannotBuyOwnListing', 'Farmers cannot purchase their own produce lots')}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="btn-primary"
+                              onClick={() => handleOpenOrderModal(l)}
+                              style={{
+                                width: '100%',
+                                padding: '9px 12px',
+                                fontSize: '0.84rem'
+                              }}
+                            >
+                              <Truck size={15} /> {t('buyAndBookDelivery')}
+                            </button>
+
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="btn-secondary"
+                              style={{
+                                width: '100%',
+                                padding: '7px 10px',
+                                fontSize: '0.78rem',
+                                color: '#15803D',
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <MessageCircle size={14} /> Contact Farmer via WhatsApp
+                            </a>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
